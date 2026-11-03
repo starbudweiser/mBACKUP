@@ -5,7 +5,6 @@ set -euo pipefail
 cd "$(dirname "$0")"
 APP="mBACKUP.app"
 DEST="$HOME/Applications/Applications Personnelles"
-GBP_RSYNC="/Applications/Get Backup Pro 3.app/Contents/Resources/rsync3"
 rm -rf "$APP" build
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" build/icon.iconset
 
@@ -19,14 +18,11 @@ done
 iconutil -c icns build/icon.iconset -o "$APP/Contents/Resources/AppIcon.icns"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
-# rsync 3.x embarqué : Resources/rsync (copie de celui de Get Backup, GPL, usage personnel), sinon celui de Get Backup, sinon rsync du système.
+# rsync 3.x embarqué : Resources/rsync (binaire GPL, usage personnel) ; à défaut, rsync du système.
 if [ -f Resources/rsync ]; then
   cp Resources/rsync "$APP/Contents/Resources/rsync"
-elif [ -f "$GBP_RSYNC" ]; then
-  lipo "$GBP_RSYNC" -thin arm64 -output "$APP/Contents/Resources/rsync"
-  chmod 755 "$APP/Contents/Resources/rsync"
 else
-  echo "Attention : rsync3 de Get Backup introuvable, rsync du système utilisé (sans attributs étendus)."
+  echo "Attention : Resources/rsync absent, rsync du système utilisé (sans attributs étendus)."
 fi
 rm -rf build
 

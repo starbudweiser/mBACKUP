@@ -9,13 +9,13 @@ struct MountInfo: Codable, Hashable {
     var autoMount: Bool
 }
 
-/// Jours de la semaine, lundi = 0 … dimanche = 6 (même ordre que le masque de Get Backup : 31 = lundi à vendredi).
+/// Jours de la semaine, lundi = 0 … dimanche = 6 (31 = lundi à vendredi).
 struct Schedule: Codable, Hashable {
     var days: Set<Int> = [0, 1, 2, 3, 4, 5, 6]
     var hour = 3
     var minute = 0
 
-    /// Masque binaire de Get Backup (bit 0 = lundi).
+    /// Masque binaire des jours (bit 0 = lundi).
     static func days(fromMask mask: Int) -> Set<Int> {
         Set((0..<7).filter { mask & (1 << $0) != 0 })
     }
@@ -84,7 +84,6 @@ struct BackupTask: Codable, Identifiable, Hashable {
     var versionsKept = 10
     var lastAttempt: Date?              // dernière échéance traitée (réussie ou non)
     var last: RunRecord?
-    var importedFrom: String?           // « Get Backup Pro 3 » si importée
 }
 
 enum PathTools {

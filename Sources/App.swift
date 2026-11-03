@@ -1,4 +1,4 @@
-// mBACKUP — copies miroir planifiées, dans la barre des menus. Alternative personnelle et simplifiée à Get Backup Pro.
+// mBACKUP — copies miroir planifiées, dans la barre des menus. Version personnelle et simplifiée d'un logiciel de copies planifiées.
 import SwiftUI
 
 @main

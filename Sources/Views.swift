@@ -309,7 +309,6 @@ struct TaskEditor: View {
                 TextField("", text: $task.name).socle(Socle.T.body).socleField()
             }
             Check(title: L.t("f.enabled"), isOn: $task.enabled)
-            if let from = task.importedFrom { Hint(from) }
             Button(L.t("btn.delete")) { store.delete(task.id) }.buttonStyle(PaleButtonStyle(Socle.C.dangerSoft)).frame(width: 200).frame(maxWidth: .infinity)
         }
     }

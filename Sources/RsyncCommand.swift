@@ -1,4 +1,4 @@
-// mBACKUP — construction de la ligne de commande rsync (mêmes options que Get Backup Pro 3 pour un miroir).
+// mBACKUP — construction de la ligne de commande rsync (options d'un miroir).
 import Foundation
 
 struct RsyncCommand {
