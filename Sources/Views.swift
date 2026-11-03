@@ -496,7 +496,8 @@ struct SettingsSheet: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(L.t("set.admin")).socle(Socle.T.label).foregroundStyle(Socle.C.textMuted)
                     HStack(spacing: Socle.M.space2) {
-                        SecureField("", text: $password).socle(Socle.T.body).socleField()
+                        SecureField("", text: $password, prompt: hasPassword ? Text(L.t("set.admin.placeholder")).foregroundColor(Socle.C.textSubtle) : nil)
+                            .socle(Socle.T.body).socleField()
                         Button(L.t("set.admin.set")) {
                             Task {
                                 let r = await Runner.verifyAdmin(password)
