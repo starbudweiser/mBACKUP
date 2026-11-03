@@ -12,7 +12,7 @@ struct MbackupApp: App {
             ContentView()
         }
         .defaultSize(width: 1100, height: 720)
-        .defaultLaunchBehavior(CommandLine.arguments.contains("--show") ? .presented : .suppressed)  // ouverture de session : aucune fenêtre
+        .defaultLaunchBehavior((CommandLine.arguments.contains("--show") || CommandLine.arguments.contains("--settings")) ? .presented : .suppressed)  // ouverture de session : aucune fenêtre
 
         MenuBarExtra {
             if store.tasks.isEmpty { Text(L.t("menu.none")) }
@@ -44,6 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Socle.brand("mBACKUP", color: Brand.color)
         Socle.apply()
         Store.shared.start()
+        if CommandLine.arguments.contains("--settings") { Store.shared.showSettings = true }   // ouvre les réglages (mot de passe admin)
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
