@@ -522,38 +522,45 @@ struct SettingsSheet: View {
     var body: some View {
         SheetFrame(title: L.t("set.title")) {
             VStack(alignment: .leading, spacing: Socle.M.space4) {
-                Check(title: L.t("set.login"), help: L.t("set.login.help"),
-                      isOn: Binding(get: { store.launchAtLogin }, set: { store.setLaunchAtLogin($0) }))
-                Check(title: L.t("set.notify"), isOn: $errorsOnly)
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(L.t("set.admin")).socle(Socle.T.label).foregroundStyle(Socle.C.textMuted)
-                    HStack(spacing: Socle.M.space2) {
-                        SecureField("", text: $password, prompt: hasPassword ? Text(L.t("set.admin.placeholder")).foregroundColor(Socle.C.textSubtle) : nil)
-                            .socle(Socle.T.body).socleField()
-                        Button(L.t("set.admin.set")) {
-                            Task {
-                                let r = await Runner.verifyAdmin(password)
-                                if r.ok { Keychain.set(password); hasPassword = true; message = L.t("set.admin.saved"); password = ""; refused = false }
-                                else { message = L.t("set.admin.bad") + " (" + r.detail + ")"; refused = true }
-                            }
-                        }.buttonStyle(SocleButtonStyle(.primary)).frame(width: 120).disabled(password.isEmpty)
-                        if refused {
-                            Button(L.t("set.admin.force")) { Keychain.set(password); hasPassword = true; message = L.t("set.admin.saved"); password = ""; refused = false }
-                                .buttonStyle(SocleButtonStyle(.secondary)).frame(width: 170)
-                        }
-                        Button(L.t("set.admin.remove")) { Keychain.remove(); hasPassword = false; message = L.t("set.admin.none") }
-                            .buttonStyle(SocleButtonStyle(.secondary)).frame(width: 120).disabled(!hasPassword)
+                Card(title: L.t("sec.general")) {
+                    VStack(alignment: .leading, spacing: Socle.M.space3) {
+                        Check(title: L.t("set.login"), help: L.t("set.login.help"),
+                              isOn: Binding(get: { store.launchAtLogin }, set: { store.setLaunchAtLogin($0) }))
+                        Check(title: L.t("set.notify"), isOn: $errorsOnly)
                     }
-                    Hint(message ?? (hasPassword ? L.t("set.admin.saved") : L.t("set.admin.none")))
-                    Hint(L.t("set.admin.help"))
                 }
-                Hint(L.t("set.fda"))
-                UpdateSection()
+                Card(title: L.t("set.admin")) {
+                    VStack(alignment: .leading, spacing: Socle.M.space3) {
+                        HStack(spacing: Socle.M.space2) {
+                            SecureField("", text: $password, prompt: hasPassword ? Text(L.t("set.admin.placeholder")).foregroundColor(Socle.C.textSubtle) : nil)
+                                .socle(Socle.T.body).socleField()
+                            Button(L.t("set.admin.set")) {
+                                Task {
+                                    let r = await Runner.verifyAdmin(password)
+                                    if r.ok { Keychain.set(password); hasPassword = true; message = L.t("set.admin.saved"); password = ""; refused = false }
+                                    else { message = L.t("set.admin.bad") + " (" + r.detail + ")"; refused = true }
+                                }
+                            }.buttonStyle(SocleButtonStyle(.primary)).frame(width: 120).disabled(password.isEmpty)
+                            if refused {
+                                Button(L.t("set.admin.force")) { Keychain.set(password); hasPassword = true; message = L.t("set.admin.saved"); password = ""; refused = false }
+                                    .buttonStyle(SocleButtonStyle(.secondary)).frame(width: 170)
+                            }
+                            Button(L.t("set.admin.remove")) { Keychain.remove(); hasPassword = false; message = L.t("set.admin.none") }
+                                .buttonStyle(SocleButtonStyle(.secondary)).frame(width: 120).disabled(!hasPassword)
+                        }
+                        VStack(alignment: .leading, spacing: Socle.M.space2) {
+                            Hint(message ?? (hasPassword ? L.t("set.admin.saved") : L.t("set.admin.none")))
+                            Hint(L.t("set.admin.help"))
+                            Hint(L.t("set.fda"))
+                        }
+                    }
+                }
+                Card(title: L.t("upd.title")) { UpdateSection() }
             }
         } footer: {
             Button(L.t("btn.close")) { store.showSettings = false }.buttonStyle(SocleButtonStyle(.primary)).frame(width: 130)
         }
-        .frame(width: 600, height: 600)
+        .frame(width: 640, height: 740)
     }
 }
 
@@ -573,16 +580,15 @@ struct UpdateSection: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(L.t("upd.title")).socle(Socle.T.label).foregroundStyle(Socle.C.textMuted)
+        VStack(alignment: .leading, spacing: Socle.M.space3) {
             Check(title: L.t("upd.auto"), isOn: $auto)
             HStack(spacing: Socle.M.space2) {
                 Button(L.t("upd.check")) { Task { await updater.check() } }
-                    .buttonStyle(SocleButtonStyle(.secondary)).frame(width: 200)
+                    .buttonStyle(SocleButtonStyle(.secondary)).lineLimit(1).frame(width: 240)
                     .disabled(updater.state == .checking || updater.state == .downloading)
                 if case .available(let v) = updater.state {
                     Button(L.t("upd.install", v)) { Task { await updater.install() } }
-                        .buttonStyle(SocleButtonStyle(.primary)).frame(width: 200)
+                        .buttonStyle(SocleButtonStyle(.primary)).lineLimit(1).frame(width: 240)
                         .disabled(!Store.shared.queue.isEmpty)
                 }
             }
