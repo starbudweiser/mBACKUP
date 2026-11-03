@@ -154,6 +154,26 @@ struct ToneButtonStyle: ButtonStyle {
     }
 }
 
+/// Bouton carré à icône seule : aplat `control`, un cran plus clair au survol.
+struct IconButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View { Styled(configuration: configuration) }
+
+    private struct Styled: View {
+        let configuration: Configuration
+        @State private var hover = false
+        var body: some View {
+            configuration.label
+                .foregroundStyle(Socle.C.textStrong)
+                .frame(width: Socle.M.sizeControl, height: Socle.M.sizeControl)
+                .background(configuration.isPressed ? Socle.C.controlPressed : hover ? Socle.C.controlHover : Socle.C.control,
+                            in: RoundedRectangle(cornerRadius: Socle.M.radius))
+                .contentShape(Rectangle())
+                .onHover { hover = $0 }
+                .animation(.easeOut(duration: 0.15), value: hover)
+        }
+    }
+}
+
 // MARK: - Fenêtre principale
 
 struct ContentView: View {
@@ -164,9 +184,11 @@ struct ContentView: View {
             HStack(spacing: Socle.M.space3) {
                 Text(branded: "mBACKUP").socle(Socle.T.heading).foregroundStyle(Socle.C.textStrong)
                 Spacer()
-                Button(L.t("menu.settings")) { store.showSettings = true }.buttonStyle(SocleButtonStyle(.tertiary, height: Socle.M.sizeControl)).frame(width: 130)
+                Button { store.showSettings = true } label: { Image(systemName: "gearshape").font(.system(size: 15, weight: .medium)) }
+                    .buttonStyle(IconButtonStyle()).help(L.t("menu.settings")).accessibilityLabel(L.t("menu.settings"))
             }
-            .padding(.horizontal, Socle.M.space3).frame(height: Socle.M.sizeBar)
+            // Marge droite de 28 px : la roue s'aligne sur le bord droit du bouton LANCER, juste dessous.
+            .padding(.leading, Socle.M.space3).padding(.trailing, 28).frame(height: Socle.M.sizeBar)
             .background(Socle.C.surfaceRaised)
             Rectangle().fill(Socle.C.border).frame(height: 1)
             HStack(spacing: 0) {
