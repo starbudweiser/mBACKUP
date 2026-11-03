@@ -127,12 +127,15 @@ struct ProgressBar: View {
     }
 }
 
-/// Bouton plat vert pâle (`success-soft` de Socle, libellé `on-action`) : l'appel à créer, dans la barre latérale.
-struct PaleGreenButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View { Styled(configuration: configuration) }
+/// Bouton plat pâle (teinte « soft » de Socle, libellé `on-action`) : vert pour créer, rouge pour supprimer.
+struct PaleButtonStyle: ButtonStyle {
+    let fill: Color
+    init(_ fill: Color) { self.fill = fill }
+    func makeBody(configuration: Configuration) -> some View { Styled(configuration: configuration, fill: fill) }
 
     private struct Styled: View {
         let configuration: Configuration
+        let fill: Color
         @State private var hover = false
         var body: some View {
             configuration.label
@@ -140,7 +143,7 @@ struct PaleGreenButtonStyle: ButtonStyle {
                 .foregroundStyle(Socle.C.onAction)
                 .padding(.horizontal, Socle.M.space4)
                 .frame(maxWidth: .infinity, minHeight: Socle.M.sizeControlLg)
-                .background(Socle.C.successSoft.opacity(configuration.isPressed ? 0.7 : hover ? 0.85 : 1), in: RoundedRectangle(cornerRadius: Socle.M.radius))
+                .background(fill.opacity(configuration.isPressed ? 0.7 : hover ? 0.85 : 1), in: RoundedRectangle(cornerRadius: Socle.M.radius))
                 .contentShape(Rectangle())
                 .onHover { hover = $0 }
                 .animation(.easeOut(duration: 0.15), value: hover)
@@ -221,7 +224,7 @@ struct Sidebar: View {
                 }.padding(.horizontal, Socle.M.space2)
             }
             VStack(spacing: Socle.M.space2) {
-                Button(L.t("tasks.add")) { store.addTask() }.buttonStyle(PaleGreenButtonStyle())
+                Button(L.t("tasks.add")) { store.addTask() }.buttonStyle(PaleButtonStyle(Socle.C.successSoft))
             }.padding(Socle.M.space3)
         }
         .background(Socle.C.surfaceRaised)
@@ -307,7 +310,7 @@ struct TaskEditor: View {
             }
             Check(title: L.t("f.enabled"), isOn: $task.enabled)
             if let from = task.importedFrom { Hint(from) }
-            Button(L.t("btn.delete")) { store.delete(task.id) }.buttonStyle(SocleButtonStyle(.tertiary)).frame(width: 200).frame(maxWidth: .infinity)
+            Button(L.t("btn.delete")) { store.delete(task.id) }.buttonStyle(PaleButtonStyle(Socle.C.dangerSoft)).frame(width: 200).frame(maxWidth: .infinity)
         }
     }
 
