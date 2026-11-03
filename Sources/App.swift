@@ -29,7 +29,7 @@ struct MbackupApp: App {
             Button(L.t("menu.about")) { About.show() }
             Button(L.t("menu.quit")) { NSApp.terminate(nil) }.keyboardShortcut("q")
         } label: {
-            Image(systemName: store.queue.isEmpty ? "arrow.triangle.2.circlepath" : "arrow.triangle.2.circlepath.circle.fill")
+            MenuBarIcon(running: !store.queue.isEmpty)
         }
     }
 
@@ -48,4 +48,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+}
+
+/// Image qui tourne : un tour en 12 images, indépendant du Store pour ne pas redessiner la fenêtre à chaque image.
+@MainActor
+final class Spinner: ObservableObject {
+    static let shared = Spinner()
+    @Published private(set) var frame = 0
+    private var timer: Timer?
+    static let frames = 12
+
+    func set(running: Bool) {
+        if running, timer == nil {
+            timer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { _ in
+                Task { @MainActor in Spinner.shared.frame = (Spinner.shared.frame + 1) % Spinner.frames }
+            }
+        } else if !running {
+            timer?.invalidate(); timer = nil; frame = 0
+        }
+    }
+}
+
+/// Icône de la barre des menus : monochrome (celle du système) au repos, orange et tournante pendant qu'une tâche tourne.
+struct MenuBarIcon: View {
+    let running: Bool
+    @ObservedObject private var spinner = Spinner.shared
+    private static let amber = NSColor(srgbRed: 0xf5 / 255, green: 0x9e / 255, blue: 0x0b / 255, alpha: 1)   // orange « action » de Socle
+    private static let base = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "mBACKUP") ?? NSImage()
+    private static let colored = base.withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [amber]).applying(NSImage.SymbolConfiguration(weight: .semibold))) ?? base
+    /// Images pré-calculées : l'icône orange tournée de 30° en 30°, sur un carré pour que rien ne soit rogné.
+    private static let frames: [NSImage] = (0..<Spinner.frames).map { i in
+        let side = ceil(max(colored.size.width, colored.size.height)) + 2
+        let size = NSSize(width: side, height: side)
+        let img = NSImage(size: size, flipped: false) { rect in
+            let t = AffineTransform(translationByX: side / 2, byY: side / 2)
+            var rot = AffineTransform(rotationByDegrees: -CGFloat(i) * 360 / CGFloat(Spinner.frames))
+            rot.prepend(AffineTransform(translationByX: -side / 2, byY: -side / 2))
+            var all = t; all.prepend(rot)
+            (all as NSAffineTransform).concat()
+            colored.draw(in: NSRect(x: (side - colored.size.width) / 2, y: (side - colored.size.height) / 2, width: colored.size.width, height: colored.size.height))
+            return true
+        }
+        img.isTemplate = false          // une image « modèle » serait recolorée en blanc ou noir par le système
+        return img
+    }
+
+    var body: some View {
+        if running { Image(nsImage: Self.frames[spinner.frame]) }
+        else { Image(nsImage: Self.template) }
+    }
+
+    private static let template: NSImage = { base.isTemplate = true; return base }()
 }

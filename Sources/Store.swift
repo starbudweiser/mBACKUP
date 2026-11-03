@@ -89,13 +89,14 @@ final class Store: ObservableObject {
         guard !queue.contains(id) else { return }
         queue.append(id)
         if dry { queuedDry.insert(id) }
+        Spinner.shared.set(running: true)
         pump()
     }
 
     func runAll() { tasks.filter(\.enabled).forEach { enqueue($0.id, dry: false) } }
 
     func stop(_ id: UUID) {
-        if queue.first == id { current?.terminate() } else { queue.removeAll { $0 == id }; queuedDry.remove(id) }
+        if queue.first == id { current?.terminate() } else { queue.removeAll { $0 == id }; queuedDry.remove(id); if queue.isEmpty { Spinner.shared.set(running: false) } }
     }
 
     private func pump() {
@@ -116,6 +117,7 @@ final class Store: ObservableObject {
         queue.removeAll { $0 == id }
         queuedDry.remove(id)
         progress[id] = nil
+        if queue.isEmpty { Spinner.shared.set(running: false) }
         let scheduled = scheduledRun.remove(id) != nil
 
         if dry {
