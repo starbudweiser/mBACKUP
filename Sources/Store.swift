@@ -1,4 +1,4 @@
-// mBACKUP — état de l'appli : tâches, file d'exécution, planificateur, import, notifications.
+// mBACKUP — état de l'appli : tâches, file d'exécution, planificateur, notifications.
 import Foundation
 import SwiftUI
 import UserNotifications
@@ -14,7 +14,6 @@ final class Store: ObservableObject {
     @Published var queue: [UUID] = []                 // en attente ou en cours (le premier est en cours)
     @Published var dryRun: DryRunResult?
     @Published var notice: String?
-    @Published var showImport = false
     @Published var showSettings = false
 
     private var current: Process?
@@ -171,20 +170,6 @@ final class Store: ObservableObject {
         guard tasks.contains(where: { $0.id == id }) else { return nil }
         return Binding(get: { self.tasks.first { $0.id == id } ?? BackupTask(name: "", source: "", destination: "") },
                        set: { new in if let i = self.tasks.firstIndex(where: { $0.id == id }) { self.tasks[i] = new } })
-    }
-
-    // MARK: Import
-
-    /// Ajoute les tâches du rapport, sans doublon (même source et même destination).
-    @discardableResult
-    func apply(_ report: ImportReport) -> Int {
-        var added = 0
-        for var t in report.tasks where !tasks.contains(where: { $0.source == t.source && $0.destination == t.destination }) {
-            if t.lastAttempt == nil { t.lastAttempt = Date() }
-            tasks.append(t); added += 1
-        }
-        if selection == nil { selection = tasks.first?.id }
-        return added
     }
 
     // MARK: Statut affiché

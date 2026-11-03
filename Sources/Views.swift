@@ -155,7 +155,6 @@ struct ContentView: View {
         .frame(minWidth: 1000, minHeight: 660)
         .environment(\.locale, L.locale)
         .background(WindowSetup())
-        .sheet(isPresented: $store.showImport) { ImportSheet() }
         .sheet(isPresented: $store.showSettings) { SettingsSheet() }
         .sheet(item: $store.dryRun) { DryRunSheet(result: $0) }
         .alert(store.notice ?? "", isPresented: Binding(get: { store.notice != nil }, set: { if !$0 { store.notice = nil } })) {
@@ -201,7 +200,6 @@ struct Sidebar: View {
             }
             VStack(spacing: Socle.M.space2) {
                 Button(L.t("tasks.add")) { store.addTask() }.buttonStyle(SocleButtonStyle(.secondary))
-                Button(L.t("tasks.import")) { store.showImport = true }.buttonStyle(SocleButtonStyle(.secondary))
             }.padding(Socle.M.space3)
         }
         .background(Socle.C.surfaceRaised)
@@ -224,8 +222,7 @@ struct EmptyState: View {
                 Text(L.t("empty.title")).socle(Socle.T.display).foregroundStyle(Socle.C.textStrong)
                 Text(branded: L.t("empty.body")).socle(Socle.T.reading).foregroundStyle(Socle.C.textMuted)
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-                Button(L.t("btn.importNow")) { store.showImport = true }.buttonStyle(SocleButtonStyle(.action)).frame(width: 300).padding(.top, Socle.M.space2)
-                Button(L.t("tasks.add")) { store.addTask() }.buttonStyle(SocleButtonStyle(.tertiary)).frame(width: 300)
+                Button(L.t("tasks.add")) { store.addTask() }.buttonStyle(SocleButtonStyle(.action)).frame(width: 300).padding(.top, Socle.M.space2)
             }
             .padding(Socle.M.space6).frame(maxWidth: 560)
             .background(Socle.C.surface, in: RoundedRectangle(cornerRadius: Socle.M.radiusLg))
@@ -410,54 +407,6 @@ struct SheetFrame<Content: View, Footer: View>: View {
             HStack(spacing: Socle.M.space2) { Spacer(); footer }.padding(Socle.M.space4)
         }
         .background(Socle.C.surface).environment(\.locale, L.locale)
-    }
-}
-
-struct ImportSheet: View {
-    @ObservedObject var store = Store.shared
-    @State private var report: ImportReport?
-    @State private var failed = false
-
-    var body: some View {
-        SheetFrame(title: L.t("import.title")) {
-            VStack(alignment: .leading, spacing: Socle.M.space3) {
-                if failed {
-                    Text(L.t("import.error")).foregroundStyle(Socle.C.danger)
-                } else if let r = report {
-                    if r.tasks.isEmpty { Text(L.t("import.none")).foregroundStyle(Socle.C.textMuted) }
-                    else {
-                        Text(L.t("import.found", r.tasks.count)).foregroundStyle(Socle.C.accentText)
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 6) {
-                                ForEach(r.tasks) { t in
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text(t.name).socle(Socle.T.labelStrong).foregroundStyle(Socle.C.textStrong)
-                                        Text("\(t.source) → \(t.destination)").socle(Socle.T.monoSm).foregroundStyle(Socle.C.textMuted).lineLimit(2)
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading).padding(Socle.M.space2_5)
-                                    .background(Socle.C.bgSunken, in: RoundedRectangle(cornerRadius: Socle.M.radius))
-                                }
-                            }
-                        }.frame(maxHeight: 300)
-                    }
-                    if !r.skipped.isEmpty { Hint(L.t("import.skipped", r.skipped.joined(separator: ", "))) }
-                    Hint(L.t("import.note"))
-                }
-            }.socle(Socle.T.body)
-        } footer: {
-            Button(L.t("btn.cancel")) { store.showImport = false }.buttonStyle(SocleButtonStyle(.secondary)).frame(width: 130)
-            Button(L.t("btn.import")) {
-                if let r = report {
-                    let n = store.apply(r); store.showImport = false
-                    // Les tâches importées demandent les droits administrateur : le mot de passe se règle dans les réglages.
-                    if r.tasks.contains(where: \.useAdmin) && Keychain.get() == nil { store.showSettings = true } else { store.notice = L.t("import.done", n) }
-                }
-            }.buttonStyle(SocleButtonStyle(.primary)).frame(width: 130).disabled(report?.tasks.isEmpty ?? true)
-        }
-        .frame(width: 640, height: 520)
-        .onAppear {
-            do { report = try GetBackupImporter.read() } catch { failed = true }
-        }
     }
 }
 

@@ -4,31 +4,6 @@ import Foundation
 var failures = 0
 func check(_ ok: Bool, _ msg: String, line: Int = #line) { if !ok { failures += 1; print("ÉCHEC (l.\(line)) : \(msg)") } }
 
-// --- Import (données de Get Backup Pro 3 réelles : PHOTOS et DEV SKYRIM)
-let list: [[String: Any]] = [
-    ["Name": "PHOTOS", "SynchronizeType": 0, "Direction": 0, "UseAdminPrivileges": true,
-     "ExcludePathList": [".DS_Store", ".Trashes"], "Filters": ["ExcludeInvisible": false],
-     "FirstLocation": ["MountPoint": "/Volumes/Photos", "PathFromMountPoint": "-", "URL": "file:///Volumes/Photos/", "VolumeUUID": "62CA2DE3", "Automount": false],
-     "SecondLocation": ["MountPoint": "/Volumes/OWC 6To", "PathFromMountPoint": "/ARCHIVES/PHOTOS", "URL": "file:///Volumes/OWC%206To/", "VolumeUUID": "129E1145", "Automount": false],
-     "Schedule": ["UseScheduled": true, "WeekDay": 127, "TimeHH": 2, "TimeMM": 0]],
-    ["Name": "DEV SKYRIM", "SynchronizeType": 0, "Direction": 0, "UseAdminPrivileges": true,
-     "FirstLocation": ["MountPoint": "/Volumes/SKYRIM", "PathFromMountPoint": "/TOOLS/MAC", "VolumeUUID": "-", "Automount": true],
-     "SecondLocation": ["MountPoint": "/Volumes/Softwares", "PathFromMountPoint": "/_DEV/SKYRIM TOOLS", "URL": "smb://starbudweiser@192.168.1.151/Softwares", "VolumeUUID": "-", "Automount": true],
-     "Schedule": ["UseScheduled": true, "WeekDay": 31, "TimeHH": 4, "TimeMM": 0]],
-    ["Name": "AUTRE", "SynchronizeType": 2],
-]
-let report = GetBackupImporter.parse(list)
-check(report.tasks.count == 2, "2 tâches importées")
-check(report.skipped == ["AUTRE"], "type inconnu ignoré")
-check(report.tasks[0].source == "/Volumes/Photos", "source racine : \(report.tasks[0].source)")
-check(report.tasks[0].destination == "/Volumes/OWC 6To/ARCHIVES/PHOTOS", "destination : \(report.tasks[0].destination)")
-check(report.tasks[0].useAdmin, "admin conservé")
-check(report.tasks[0].excludes == [".DS_Store", ".Trashes"], "exclusions")
-check(report.tasks[1].schedule.days == [0, 1, 2, 3, 4], "masque 31 = lundi à vendredi")
-check(report.tasks[1].destinationMount?.smbURL == "smb://starbudweiser@192.168.1.151/Softwares", "URL SMB")
-check(report.tasks[1].destinationMount?.autoMount == true, "montage auto")
-check(report.tasks[1].sourceMount?.volumeUUID == nil, "UUID « - » ignoré")
-
 // --- Planification (calendrier fixe pour un test déterministe)
 var cal = Calendar(identifier: .gregorian); cal.timeZone = TimeZone(identifier: "Europe/Paris")!
 func date(_ s: String) -> Date { let f = DateFormatter(); f.calendar = cal; f.timeZone = cal.timeZone; f.dateFormat = "yyyy-MM-dd HH:mm"; return f.date(from: s)! }
