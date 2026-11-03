@@ -2,3 +2,4 @@ mBACKUP.app/
 build/
 .DS_Store
 PASSATION_*.md
+dist/
