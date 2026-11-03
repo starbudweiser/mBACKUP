@@ -75,7 +75,7 @@ struct MenuBarIcon: View {
     @ObservedObject private var spinner = Spinner.shared
     private static let amber = NSColor(srgbRed: 0xf5 / 255, green: 0x9e / 255, blue: 0x0b / 255, alpha: 1)   // orange « action » de Socle
     private static let base = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "mBACKUP") ?? NSImage()
-    private static let colored = base.withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [amber]).applying(NSImage.SymbolConfiguration(weight: .semibold))) ?? base
+    private static let colored = base.withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [amber]).applying(NSImage.SymbolConfiguration(pointSize: 13, weight: .semibold))) ?? base
     /// Images pré-calculées : l'icône orange tournée de 30° en 30°, sur un carré pour que rien ne soit rogné.
     private static let frames: [NSImage] = (0..<Spinner.frames).map { i in
         let side = ceil(max(colored.size.width, colored.size.height)) + 2
