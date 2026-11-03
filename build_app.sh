@@ -19,8 +19,10 @@ done
 iconutil -c icns build/icon.iconset -o "$APP/Contents/Resources/AppIcon.icns"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
-# rsync 3.x embarqué (celui de Get Backup, licence GPL, usage personnel) ; à défaut, rsync du système.
-if [ -f "$GBP_RSYNC" ]; then
+# rsync 3.x embarqué : Resources/rsync (copie de celui de Get Backup, GPL, usage personnel), sinon celui de Get Backup, sinon rsync du système.
+if [ -f Resources/rsync ]; then
+  cp Resources/rsync "$APP/Contents/Resources/rsync"
+elif [ -f "$GBP_RSYNC" ]; then
   lipo "$GBP_RSYNC" -thin arm64 -output "$APP/Contents/Resources/rsync"
   chmod 755 "$APP/Contents/Resources/rsync"
 else
