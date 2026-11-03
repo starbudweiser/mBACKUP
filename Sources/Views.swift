@@ -262,6 +262,7 @@ struct EmptyState: View {
 struct TaskEditor: View {
     @Binding var task: BackupTask
     @ObservedObject var store = Store.shared
+    @State private var confirmDelete = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -273,6 +274,10 @@ struct TaskEditor: View {
                 }.padding(28)
             }
         }
+        .alert(L.t("del.title"), isPresented: $confirmDelete) {
+            Button(L.t("btn.cancel"), role: .cancel) {}
+            Button(L.t("del.confirm"), role: .destructive) { store.delete(task.id) }
+        } message: { Text(L.t("del.body", task.name)) }
     }
 
     private var header: some View {
@@ -309,7 +314,7 @@ struct TaskEditor: View {
                 TextField("", text: $task.name).socle(Socle.T.body).socleField()
             }
             Check(title: L.t("f.enabled"), isOn: $task.enabled)
-            Button(L.t("btn.delete")) { store.delete(task.id) }.buttonStyle(PaleButtonStyle(Socle.C.dangerSoft)).frame(width: 200).frame(maxWidth: .infinity)
+            Button(L.t("btn.delete")) { confirmDelete = true }.buttonStyle(PaleButtonStyle(Socle.C.dangerSoft)).frame(width: 200).frame(maxWidth: .infinity)
         }
     }
 
