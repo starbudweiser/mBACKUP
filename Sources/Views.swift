@@ -43,13 +43,15 @@ struct MbackupMark: View {
 struct Card<Content: View>: View {
     let title: String
     var subtitle: String?
+    var centered = false            // carte dont le contenu est centré : son titre l'est aussi
     @ViewBuilder var content: Content
     var body: some View {
         VStack(alignment: .leading, spacing: Socle.M.space3) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: centered ? .center : .leading, spacing: 2) {
                 Text(title).socle(Socle.T.title).foregroundStyle(Socle.C.textStrong)
                 if let subtitle { Text(branded: subtitle).socle(Socle.T.body).foregroundStyle(Socle.C.accentText) }
             }
+            .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
             content
         }
         .padding(Socle.M.space6)
@@ -305,7 +307,7 @@ struct TaskEditor: View {
             }
             Check(title: L.t("f.enabled"), isOn: $task.enabled)
             if let from = task.importedFrom { Hint(from) }
-            Button(L.t("btn.delete")) { store.delete(task.id) }.buttonStyle(SocleButtonStyle(.tertiary)).frame(width: 200)
+            Button(L.t("btn.delete")) { store.delete(task.id) }.buttonStyle(SocleButtonStyle(.tertiary)).frame(width: 200).frame(maxWidth: .infinity)
         }
     }
 
@@ -407,7 +409,7 @@ struct TaskEditor: View {
     }
 
     private var lastRun: some View {
-        Card(title: L.t("sec.last")) {
+        Card(title: L.t("sec.last"), centered: true) {
             VStack(alignment: .center, spacing: Socle.M.space3) {
                 if store.isQueued(task.id) { ProgressBar(value: store.progress[task.id] ?? 0) }
                 if let last = task.last {
