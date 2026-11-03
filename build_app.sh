@@ -35,6 +35,11 @@ if [ -x "$SIGN" ]; then "$SIGN" "$APP"; else codesign --force --deep -s - "$APP"
 
 if [ -z "${NO_INSTALL:-}" ]; then
   mkdir -p "$DEST"
+  # Jamais d'installation pendant une sauvegarde : l'appli installée serait arrêtée en plein transfert.
+  if pgrep -f "mBACKUP.app/Contents/Resources/rsync" >/dev/null && [ -z "${FORCE:-}" ]; then
+    echo "Sauvegarde en cours : installation annulée (l'appli compilée est dans $PWD/$APP). Relancer quand elle est finie, ou FORCE=1." >&2
+    exit 2
+  fi
   pkill -x mBACKUP 2>/dev/null || true
   rm -rf "$DEST/$APP"
   cp -R "$APP" "$DEST/$APP"

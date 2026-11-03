@@ -65,10 +65,12 @@ final class OutputCollector: @unchecked Sendable {
     private let onProgress: @Sendable (Double) -> Void
     private let keepDry: Bool
 
-    init(logURL: URL?, keepDry: Bool, onProgress: @escaping @Sendable (Double) -> Void) {
+    init(logURL: URL?, append: Bool, header: String, keepDry: Bool, onProgress: @escaping @Sendable (Double) -> Void) {
         if let logURL {
-            FileManager.default.createFile(atPath: logURL.path, contents: nil)
+            if !append || !FileManager.default.fileExists(atPath: logURL.path) { FileManager.default.createFile(atPath: logURL.path, contents: nil) }
             log = try? FileHandle(forWritingTo: logURL)
+            _ = try? log?.seekToEnd()
+            try? log?.write(contentsOf: Data(("=== " + header + " ===\n").utf8))
         } else { log = nil }
         self.keepDry = keepDry
         self.onProgress = onProgress
@@ -140,6 +142,21 @@ enum Runner {
         return "/Volumes/" + parts[1]
     }
 
+    /// Adresse smb:// du partage monté en `mountPoint` (lue dans la table des montages), nil si ce n'est pas un partage SMB.
+    static func smbURL(forMountPoint mountPoint: String) -> String? {
+        var fs = statfs()
+        guard statfs(mountPoint, &fs) == 0 else { return nil }
+        let type = withUnsafePointer(to: &fs.f_fstypename) { $0.withMemoryRebound(to: CChar.self, capacity: 16) { String(cString: $0) } }
+        guard type == "smbfs" else { return nil }
+        let from = withUnsafePointer(to: &fs.f_mntfromname) { $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXPATHLEN)) { String(cString: $0) } }
+        return from.hasPrefix("//") ? "smb:" + from : nil
+    }
+
+    /// Identifiant du volume local monté en `mountPoint` (pour `diskutil mount`), nil pour un partage réseau.
+    static func volumeUUID(forMountPoint mountPoint: String) -> String? {
+        try? URL(fileURLWithPath: mountPoint).resourceValues(forKeys: [.volumeUUIDStringKey]).volumeUUIDString
+    }
+
     static func mount(_ info: MountInfo) async {
         if let url = info.smbURL {
             let escaped = url.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
@@ -152,9 +169,48 @@ enum Runner {
 
     // MARK: Exécution
 
+    /// Une tâche : sa destination, puis la seconde si elle existe. Chaque destination est traitée même si l'autre échoue.
     static func execute(_ task: BackupTask, dry: Bool, password: String?,
                         setProcess: @escaping @Sendable (Process?) -> Void,
                         onProgress: @escaping @Sendable (Double) -> Void) async -> ExecResult {
+        var targets = [(path: task.destination, mount: task.destinationMount)]
+        if let d = task.secondDestination, !d.path.isEmpty { targets.append((d.path, d.mount)) }
+        let logName = PathTools.safeName(task.name) + "_" + stamp() + (dry ? "_simulation" : "") + ".log"
+        var results: [ExecResult] = []
+        for (i, t) in targets.enumerated() {
+            var one = task
+            one.destination = t.path; one.destinationMount = t.mount; one.secondDestination = nil
+            let r = await executeOne(one, dry: dry, password: password, logName: logName, append: i > 0, setProcess: setProcess, onProgress: onProgress)
+            results.append(r)
+            if r.detail == L.t("res.stopped") { break }
+        }
+        guard results.count > 1 else { return results[0] }
+
+        // Bilan commun : le pire résultat l'emporte, le détail nomme chaque destination.
+        let labels = targets.map { PathTools.label($0.path) }
+        let detail = zip(labels, results).map { "\($0) : \($1.detail)" }.joined(separator: " · ")
+        let outcome: RunOutcome
+        if results.contains(where: { $0.outcome == .failed }) { outcome = .failed }
+        else if results.allSatisfy({ $0.outcome == .skipped }) { outcome = .skipped }
+        else if results.allSatisfy({ $0.outcome == .success }) { outcome = .success }
+        else { outcome = .warnings }
+        var merged = ExecResult(outcome: outcome, detail: detail, logFile: results.compactMap(\.logFile).first)
+        merged.retryLater = results.contains { $0.retryLater }
+        if dry {
+            var sum = RsyncReport.Summary(); var lines: [String] = []; var truncated = false
+            for (label, r) in zip(labels, results) {
+                guard let d = r.dry else { continue }
+                sum.created += d.summary.created; sum.updated += d.summary.updated; sum.deleted += d.summary.deleted
+                lines += ["── " + label + " ──"] + d.lines; truncated = truncated || d.truncated
+            }
+            merged.dry = DryRunResult(taskName: task.name, summary: sum, lines: lines, truncated: truncated)
+        }
+        return merged
+    }
+
+    static func executeOne(_ task: BackupTask, dry: Bool, password: String?, logName: String, append: Bool,
+                           setProcess: @escaping @Sendable (Process?) -> Void,
+                           onProgress: @escaping @Sendable (Double) -> Void) async -> ExecResult {
         // 1. Volumes à monter, puis garde-fou : jamais d'écriture sur le disque système à la place d'un volume absent.
         for info in [task.sourceMount, task.destinationMount].compactMap({ $0 }) where !isMountPoint(info.mountPoint) {
             if info.autoMount { await mount(info) }
@@ -184,8 +240,8 @@ enum Runner {
         defer { try? FileManager.default.removeItem(atPath: excludeFile) }
         if task.versioning && !dry { try? FileManager.default.createDirectory(atPath: PathTools.versionsRoot(for: task), withIntermediateDirectories: true) }
 
-        let logName = PathTools.safeName(task.name) + "_" + st + (dry ? "_simulation" : "") + ".log"
-        let collector = OutputCollector(logURL: Paths.logs.appendingPathComponent(logName), keepDry: dry, onProgress: onProgress)
+        let collector = OutputCollector(logURL: Paths.logs.appendingPathComponent(logName), append: append,
+                                        header: task.source + " → " + task.destination, keepDry: dry, onProgress: onProgress)
 
         let process = Process()
         if task.useAdmin {

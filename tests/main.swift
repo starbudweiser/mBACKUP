@@ -1,4 +1,4 @@
-// Tests de logique : import Get Backup, planification, ligne rsync, bilans, traductions.
+// Tests de logique : planification, ligne rsync, bilans, traductions.
 import Foundation
 
 var failures = 0
@@ -30,6 +30,17 @@ check(!cmd2.arguments.contains("--delete-before"), "sans miroir : pas de suppres
 check(cmd2.arguments.contains("-n") && cmd2.arguments.contains("--itemize-changes"), "simulation")
 check(cmd2.arguments.contains("--backup-dir=/Volumes/Softwares/_DEV/mBACKUP versions/DEV SKYRIM/2026-11-03_04-00-00"), "dossier de versions : \(cmd2.arguments)")
 check(!cmd2.arguments.contains("-X") && !cmd2.arguments.contains("--iconv=UTF-8"), "rsync ancien : sans options 3.x")
+
+// --- Double destination
+check(PathTools.label("/Volumes/NAS/Photos/2026") == "NAS" && PathTools.label("/Users/x/Backups") == "Backups", "nom court de destination")
+check(PathTools.versionsRoot(destination: "/Volumes/NAS/Photos", name: "PHOTOS") == "/Volumes/NAS/mBACKUP versions/PHOTOS", "versions par destination")
+// Un tasks.json écrit avant la seconde destination doit toujours se lire
+let old = #"[{"id":"11111111-1111-1111-1111-111111111111","name":"A","source":"/a","destination":"/b","enabled":true,"catchUp":true,"useAdmin":false,"deleteExtra":true,"excludeHidden":false,"excludes":[],"versioning":false,"versionsKept":10,"schedule":{"days":[0],"hour":1,"minute":0}}]"#
+let decoded = try? JSONDecoder().decode([BackupTask].self, from: Data(old.utf8))
+check(decoded?.first?.secondDestination == nil && decoded?.first?.name == "A", "ancien tasks.json lisible")
+var two = BackupTask(name: "PHOTOS", source: "/s", destination: "/d1"); two.secondDestination = Destination(path: "/Volumes/NAS/p", mount: nil)
+let back = try? JSONDecoder().decode(BackupTask.self, from: JSONEncoder().encode(two))
+check(back?.secondDestination?.path == "/Volumes/NAS/p", "seconde destination conservée")
 
 // --- Bilans
 let stats = "Number of files: 79,338 (reg: 54,710, dir: 24,628)\nNumber of created files: 12 (reg: 10)\nNumber of deleted files: 3 (reg: 3)\nNumber of regular files transferred: 47,265\nTotal file size: 21,692,070,308 bytes"

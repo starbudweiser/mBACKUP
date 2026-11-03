@@ -299,14 +299,29 @@ struct TaskEditor: View {
             if task.destinationMount != nil {
                 Check(title: L.t("f.automount"), isOn: Binding(get: { task.destinationMount?.autoMount ?? false }, set: { task.destinationMount?.autoMount = $0 }))
             }
+            if task.secondDestination != nil {
+                Rectangle().fill(Socle.C.borderSubtle).frame(height: 1)
+                PathField(label: L.t("f.dest2"), path: Binding(get: { task.secondDestination?.path ?? "" }, set: { task.secondDestination?.path = $0 })) {
+                    task.secondDestination = Destination(path: $0, mount: Self.mountInfo($0, keeping: task.secondDestination?.mount))
+                }
+                if task.secondDestination?.mount != nil {
+                    Check(title: L.t("f.automount"), isOn: Binding(get: { task.secondDestination?.mount?.autoMount ?? false }, set: { task.secondDestination?.mount?.autoMount = $0 }))
+                }
+                Button(L.t("btn.removeDest")) { task.secondDestination = nil }.buttonStyle(SocleButtonStyle(.tertiary)).frame(width: 260)
+            } else {
+                Button(L.t("btn.addDest")) { task.secondDestination = Destination(path: "", mount: nil) }.buttonStyle(SocleButtonStyle(.secondary)).frame(width: 260)
+            }
         }
     }
 
     /// Un chemin sous /Volumes se rattache à son volume (pour le montage automatique) ; ailleurs, aucun montage.
+    /// Le partage SMB ou l'identifiant du disque sont relevés sur le volume monté : c'est ce qui permet de le remonter seul.
     static func mountInfo(_ path: String, keeping old: MountInfo?) -> MountInfo? {
         guard let root = Runner.volumeRoot(of: path) else { return nil }
         if let old, old.mountPoint == root { return old }
-        return MountInfo(mountPoint: root, smbURL: nil, volumeUUID: nil, autoMount: false)
+        let smb = Runner.smbURL(forMountPoint: root)
+        let uuid = smb == nil ? Runner.volumeUUID(forMountPoint: root) : nil
+        return MountInfo(mountPoint: root, smbURL: smb, volumeUUID: uuid, autoMount: smb != nil || uuid != nil)
     }
 
     private var schedule: some View {

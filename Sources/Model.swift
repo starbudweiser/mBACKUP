@@ -49,6 +49,12 @@ struct Schedule: Codable, Hashable {
     }
 }
 
+/// Seconde destination d'une même source (double sauvegarde : disque + NAS, par exemple).
+struct Destination: Codable, Hashable {
+    var path: String
+    var mount: MountInfo?
+}
+
 enum RunOutcome: String, Codable { case success, warnings, failed, skipped }
 
 struct RunRecord: Codable, Hashable {
@@ -66,6 +72,7 @@ struct BackupTask: Codable, Identifiable, Hashable {
     var destination: String
     var sourceMount: MountInfo?
     var destinationMount: MountInfo?
+    var secondDestination: Destination?     // facultative : la même source copiée aussi ailleurs
     var enabled = true
     var schedule = Schedule()
     var catchUp = true                  // rattrapage d'une échéance manquée (Mac éteint, disque absent)
@@ -91,8 +98,17 @@ enum PathTools {
     }
 
     /// Dossier des copies versionnées : à côté de la destination, jamais dedans.
-    static func versionsRoot(for task: BackupTask) -> String {
-        let parent = (task.destination as NSString).deletingLastPathComponent
-        return (parent as NSString).appendingPathComponent("mBACKUP versions/" + safeName(task.name))
+    static func versionsRoot(for task: BackupTask) -> String { versionsRoot(destination: task.destination, name: task.name) }
+
+    static func versionsRoot(destination: String, name: String) -> String {
+        let parent = (destination as NSString).deletingLastPathComponent
+        return (parent as NSString).appendingPathComponent("mBACKUP versions/" + safeName(name))
+    }
+
+    /// Nom court d'une destination pour les bilans : le volume (« NAS ») ou, hors /Volumes, le dernier dossier.
+    static func label(_ path: String) -> String {
+        let parts = path.split(separator: "/")
+        if parts.count >= 2, parts[0] == "Volumes" { return String(parts[1]) }
+        return parts.last.map(String.init) ?? path
     }
 }
