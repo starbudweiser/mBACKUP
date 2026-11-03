@@ -56,7 +56,6 @@ struct Card<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Socle.C.surface, in: RoundedRectangle(cornerRadius: Socle.M.radiusLg))
         .overlay(RoundedRectangle(cornerRadius: Socle.M.radiusLg).stroke(Socle.C.border, lineWidth: 1))
-        .socleModule()
     }
 }
 

@@ -11,7 +11,7 @@ struct MbackupApp: App {
         Window("mBACKUP", id: "main") {
             ContentView()
         }
-        .defaultSize(width: 1100, height: 720)
+        .defaultSize(width: 1100, height: 1032)
         .defaultLaunchBehavior((CommandLine.arguments.contains("--show") || CommandLine.arguments.contains("--settings")) ? .presented : .suppressed)  // ouverture de session : aucune fenêtre
 
         MenuBarExtra {
