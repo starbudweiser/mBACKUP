@@ -4,7 +4,7 @@ import Foundation
 /// Volume à monter avant la tâche (disque externe ou partage réseau).
 struct MountInfo: Codable, Hashable {
     var mountPoint: String      // ex. /Volumes/Softwares
-    var smbURL: String?         // ex. smb://utilisateur@192.168.1.151/Softwares
+    var smbURL: String?         // ex. smb://utilisateur@nas.local/Partage
     var volumeUUID: String?     // pour `diskutil mount`
     var autoMount: Bool
 }
