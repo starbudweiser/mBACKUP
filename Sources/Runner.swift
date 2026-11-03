@@ -261,9 +261,23 @@ enum Runner {
         for f in sorted.dropFirst(keep) { try? FileManager.default.removeItem(at: f) }
     }
 
-    /// Vérifie le mot de passe administrateur (`sudo -v`).
-    static func verifyAdmin(_ password: String) async -> Bool {
-        await run("/usr/bin/sudo", ["-S", "-k", "-p", "", "-v"], stdin: password + "\n", timeout: 15) == 0
+    /// Vérifie le mot de passe administrateur (`sudo -v`) ; renvoie aussi la raison donnée par sudo en cas de refus.
+    static func verifyAdmin(_ password: String) async -> (ok: Bool, detail: String) {
+        await Task.detached {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo"); p.arguments = ["-S", "-k", "-p", "", "-v"]
+            let input = Pipe(), err = Pipe()
+            p.standardInput = input; p.standardOutput = FileHandle.nullDevice; p.standardError = err
+            do { try p.run() } catch { return (false, error.localizedDescription) }
+            input.fileHandleForWriting.write(Data((password + "\n").utf8))
+            try? input.fileHandleForWriting.close()
+            let deadline = Date().addingTimeInterval(20)
+            while p.isRunning && Date() < deadline { try? await Task.sleep(nanoseconds: 100_000_000) }
+            if p.isRunning { p.terminate(); return (false, "délai dépassé") }
+            let text = String(decoding: err.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+                .split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }.joined(separator: " / ")
+            return (p.terminationStatus == 0, "code \(p.terminationStatus)" + (text.isEmpty ? "" : " : " + text))
+        }.value
     }
 
     /// Petit utilitaire : lance une commande et attend sa fin (avec délai maximal).

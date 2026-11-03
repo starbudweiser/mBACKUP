@@ -494,6 +494,7 @@ struct SettingsSheet: View {
     @AppStorage("notifyErrorsOnly") private var errorsOnly = true
     @State private var password = ""
     @State private var message: String?
+    @State private var refused = false
     @State private var hasPassword = Keychain.get() != nil
 
     var body: some View {
@@ -508,10 +509,15 @@ struct SettingsSheet: View {
                         SecureField("", text: $password).socle(Socle.T.body).socleField()
                         Button(L.t("set.admin.set")) {
                             Task {
-                                if await Runner.verifyAdmin(password) { Keychain.set(password); hasPassword = true; message = L.t("set.admin.saved"); password = "" }
-                                else { message = L.t("set.admin.bad") }
+                                let r = await Runner.verifyAdmin(password)
+                                if r.ok { Keychain.set(password); hasPassword = true; message = L.t("set.admin.saved"); password = ""; refused = false }
+                                else { message = L.t("set.admin.bad") + " (" + r.detail + ")"; refused = true }
                             }
                         }.buttonStyle(SocleButtonStyle(.primary)).frame(width: 120).disabled(password.isEmpty)
+                        if refused {
+                            Button(L.t("set.admin.force")) { Keychain.set(password); hasPassword = true; message = L.t("set.admin.saved"); password = ""; refused = false }
+                                .buttonStyle(SocleButtonStyle(.secondary)).frame(width: 170)
+                        }
                         Button(L.t("set.admin.remove")) { Keychain.remove(); hasPassword = false; message = L.t("set.admin.none") }
                             .buttonStyle(SocleButtonStyle(.secondary)).frame(width: 120).disabled(!hasPassword)
                     }
