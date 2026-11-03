@@ -127,23 +127,26 @@ struct ProgressBar: View {
     }
 }
 
-/// Bouton plat pâle (teinte « soft » de Socle, libellé `on-action`) : vert pour créer, rouge pour supprimer.
-struct PaleButtonStyle: ButtonStyle {
+/// Bouton plat teinté (fond `*-bg` de Socle, libellé `*-soft`) : vert sourd pour créer, rouge sourd pour supprimer.
+struct ToneButtonStyle: ButtonStyle {
     let fill: Color
-    init(_ fill: Color) { self.fill = fill }
-    func makeBody(configuration: Configuration) -> some View { Styled(configuration: configuration, fill: fill) }
+    let text: Color
+    init(fill: Color, text: Color) { self.fill = fill; self.text = text }
+    func makeBody(configuration: Configuration) -> some View { Styled(configuration: configuration, fill: fill, text: text) }
 
     private struct Styled: View {
         let configuration: Configuration
         let fill: Color
+        let text: Color
         @State private var hover = false
         var body: some View {
             configuration.label
                 .socle(Socle.T.button)
-                .foregroundStyle(Socle.C.onAction)
+                .foregroundStyle(text)
                 .padding(.horizontal, Socle.M.space4)
                 .frame(maxWidth: .infinity, minHeight: Socle.M.sizeControlLg)
-                .background(fill.opacity(configuration.isPressed ? 0.7 : hover ? 0.85 : 1), in: RoundedRectangle(cornerRadius: Socle.M.radius))
+                .background(fill, in: RoundedRectangle(cornerRadius: Socle.M.radius))
+                .overlay(RoundedRectangle(cornerRadius: Socle.M.radius).fill(configuration.isPressed ? Color.black.opacity(0.2) : hover ? Color.white.opacity(0.08) : .clear))
                 .contentShape(Rectangle())
                 .onHover { hover = $0 }
                 .animation(.easeOut(duration: 0.15), value: hover)
@@ -224,7 +227,7 @@ struct Sidebar: View {
                 }.padding(.horizontal, Socle.M.space2)
             }
             VStack(spacing: Socle.M.space2) {
-                Button(L.t("tasks.add")) { store.addTask() }.buttonStyle(PaleButtonStyle(Socle.C.successSoft))
+                Button(L.t("tasks.add")) { store.addTask() }.buttonStyle(ToneButtonStyle(fill: Socle.C.successBg, text: Socle.C.successSoft))
             }.padding(Socle.M.space3)
         }
         .background(Socle.C.surfaceRaised)
@@ -314,7 +317,7 @@ struct TaskEditor: View {
                 TextField("", text: $task.name).socle(Socle.T.body).socleField()
             }
             Check(title: L.t("f.enabled"), isOn: $task.enabled)
-            Button(L.t("btn.delete")) { confirmDelete = true }.buttonStyle(PaleButtonStyle(Socle.C.dangerSoft)).frame(width: 200).frame(maxWidth: .infinity)
+            Button(L.t("btn.delete")) { confirmDelete = true }.buttonStyle(ToneButtonStyle(fill: Socle.C.dangerBg, text: Socle.C.dangerSoft)).frame(width: 200).frame(maxWidth: .infinity)
         }
     }
 
