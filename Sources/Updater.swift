@@ -124,6 +124,7 @@ final class Updater: ObservableObject {
         p.standardOutput = FileHandle.nullDevice; p.standardError = FileHandle.nullDevice
         try p.run()
         NSApp.terminate(nil)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { exit(0) }     // terminate() peut rester sans effet derrière une fenêtre modale
     }
 
     @discardableResult
