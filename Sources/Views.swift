@@ -125,6 +125,27 @@ struct ProgressBar: View {
     }
 }
 
+/// Bouton plat vert pâle (`success-soft` de Socle, libellé `on-action`) : l'appel à créer, dans la barre latérale.
+struct PaleGreenButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View { Styled(configuration: configuration) }
+
+    private struct Styled: View {
+        let configuration: Configuration
+        @State private var hover = false
+        var body: some View {
+            configuration.label
+                .socle(Socle.T.button)
+                .foregroundStyle(Socle.C.onAction)
+                .padding(.horizontal, Socle.M.space4)
+                .frame(maxWidth: .infinity, minHeight: Socle.M.sizeControlLg)
+                .background(Socle.C.successSoft.opacity(configuration.isPressed ? 0.7 : hover ? 0.85 : 1), in: RoundedRectangle(cornerRadius: Socle.M.radius))
+                .contentShape(Rectangle())
+                .onHover { hover = $0 }
+                .animation(.easeOut(duration: 0.15), value: hover)
+        }
+    }
+}
+
 // MARK: - Fenêtre principale
 
 struct ContentView: View {
@@ -198,7 +219,7 @@ struct Sidebar: View {
                 }.padding(.horizontal, Socle.M.space2)
             }
             VStack(spacing: Socle.M.space2) {
-                Button(L.t("tasks.add")) { store.addTask() }.buttonStyle(SocleButtonStyle(.secondary))
+                Button(L.t("tasks.add")) { store.addTask() }.buttonStyle(PaleGreenButtonStyle())
             }.padding(Socle.M.space3)
         }
         .background(Socle.C.surfaceRaised)
