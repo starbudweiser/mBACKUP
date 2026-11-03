@@ -327,9 +327,9 @@ struct TaskEditor: View {
                 if task.secondDestination?.mount != nil {
                     Check(title: L.t("f.automount"), isOn: Binding(get: { task.secondDestination?.mount?.autoMount ?? false }, set: { task.secondDestination?.mount?.autoMount = $0 }))
                 }
-                Button(L.t("btn.removeDest")) { task.secondDestination = nil }.buttonStyle(SocleButtonStyle(.tertiary)).frame(width: 260)
+                Button(L.t("btn.removeDest")) { task.secondDestination = nil }.buttonStyle(SocleButtonStyle(.tertiary)).frame(width: 260).frame(maxWidth: .infinity)
             } else {
-                Button(L.t("btn.addDest")) { task.secondDestination = Destination(path: "", mount: nil) }.buttonStyle(SocleButtonStyle(.secondary)).frame(width: 260)
+                Button(L.t("btn.addDest")) { task.secondDestination = Destination(path: "", mount: nil) }.buttonStyle(SocleButtonStyle(.secondary)).frame(width: 260).frame(maxWidth: .infinity)
             }
         }
     }
@@ -408,20 +408,24 @@ struct TaskEditor: View {
 
     private var lastRun: some View {
         Card(title: L.t("sec.last")) {
-            if store.isQueued(task.id) { ProgressBar(value: store.progress[task.id] ?? 0) }
-            if let last = task.last {
-                HStack(spacing: Socle.M.space2) {
-                    StatusDot(outcome: last.outcome, running: false)
-                    Text(L.t("last.at", L.date(last.date))).socle(Socle.T.body).foregroundStyle(Socle.C.text)
+            VStack(alignment: .center, spacing: Socle.M.space3) {
+                if store.isQueued(task.id) { ProgressBar(value: store.progress[task.id] ?? 0) }
+                if let last = task.last {
+                    HStack(spacing: Socle.M.space2) {
+                        StatusDot(outcome: last.outcome, running: false)
+                        Text(L.t("last.at", L.date(last.date))).socle(Socle.T.body).foregroundStyle(Socle.C.text)
+                    }
+                    Text(last.detail).socle(Socle.T.body).foregroundStyle(Socle.C.textMuted)
+                        .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                    if let url = store.logURL(task), FileManager.default.fileExists(atPath: url.path) {
+                        Button(L.t("btn.log")) { NSWorkspace.shared.open(url) }.buttonStyle(SocleButtonStyle(.secondary)).frame(width: 200)
+                    }
+                } else {
+                    Text(L.t("status.never")).socle(Socle.T.body).foregroundStyle(Socle.C.textMuted)
                 }
-                Text(last.detail).socle(Socle.T.body).foregroundStyle(Socle.C.textMuted).fixedSize(horizontal: false, vertical: true)
-                if let url = store.logURL(task), FileManager.default.fileExists(atPath: url.path) {
-                    Button(L.t("btn.log")) { NSWorkspace.shared.open(url) }.buttonStyle(SocleButtonStyle(.secondary)).frame(width: 200)
-                }
-            } else {
-                Text(L.t("status.never")).socle(Socle.T.body).foregroundStyle(Socle.C.textMuted)
+                if let n = store.nextRun(task) { Hint(L.t("next.at", L.date(n))).multilineTextAlignment(.center) }
             }
-            if let n = store.nextRun(task) { Hint(L.t("next.at", L.date(n))) }
+            .frame(maxWidth: .infinity)
         }
     }
 }
