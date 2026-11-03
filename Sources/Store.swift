@@ -68,6 +68,7 @@ final class Store: ObservableObject {
 
     /// Lance les tâches dont l'échéance est passée : à l'heure dite, ou en rattrapage si la tâche l'autorise.
     func tick(now: Date = Date()) {
+        Updater.shared.tick(busy: !queue.isEmpty)
         for t in tasks where t.enabled && !queue.contains(t.id) {
             guard let due = t.schedule.lastOccurrence(onOrBefore: now),
                   (t.lastAttempt ?? .distantPast) < due,

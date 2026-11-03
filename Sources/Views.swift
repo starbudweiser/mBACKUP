@@ -548,10 +548,46 @@ struct SettingsSheet: View {
                     Hint(L.t("set.admin.help"))
                 }
                 Hint(L.t("set.fda"))
+                UpdateSection()
             }
         } footer: {
             Button(L.t("btn.close")) { store.showSettings = false }.buttonStyle(SocleButtonStyle(.primary)).frame(width: 130)
         }
-        .frame(width: 600, height: 460)
+        .frame(width: 600, height: 600)
+    }
+}
+
+struct UpdateSection: View {
+    @ObservedObject var updater = Updater.shared
+    @AppStorage("autoUpdate") private var auto = true
+
+    private var status: String {
+        switch updater.state {
+        case .idle: return L.t("upd.version", updater.currentVersion)
+        case .checking: return L.t("upd.checking")
+        case .upToDate: return L.t("upd.uptodate", updater.currentVersion)
+        case .available(let v): return L.t("upd.available", v)
+        case .downloading: return L.t("upd.downloading")
+        case .failed(let e): return L.t("upd.failed", e)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(L.t("upd.title")).socle(Socle.T.label).foregroundStyle(Socle.C.textMuted)
+            Check(title: L.t("upd.auto"), isOn: $auto)
+            HStack(spacing: Socle.M.space2) {
+                Button(L.t("upd.check")) { Task { await updater.check() } }
+                    .buttonStyle(SocleButtonStyle(.secondary)).frame(width: 200)
+                    .disabled(updater.state == .checking || updater.state == .downloading)
+                if case .available(let v) = updater.state {
+                    Button(L.t("upd.install", v)) { Task { await updater.install() } }
+                        .buttonStyle(SocleButtonStyle(.primary)).frame(width: 200)
+                        .disabled(!Store.shared.queue.isEmpty)
+                }
+            }
+            Hint(status)
+            if case .available = updater.state, !Store.shared.queue.isEmpty { Hint(L.t("upd.busy")) }
+        }
     }
 }

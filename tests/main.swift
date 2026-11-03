@@ -62,5 +62,7 @@ for lang in ["en", "es", "it"] {
 }
 check(fr.keys.contains { $0.hasPrefix("about.") }, "clés about.*")
 
+check(VersionCompare.isNewer("v1.0.1", than: "1.0.0") && VersionCompare.isNewer("1.10.0", than: "1.9.9") && !VersionCompare.isNewer("1.0.0", than: "1.0") && !VersionCompare.isNewer("1.0.0", than: "v1.0.0") && VersionCompare.isNewer("2", than: "1.9.9"), "comparaison de versions")
+
 print(failures == 0 ? "Tous les tests passent." : "\(failures) échec(s).")
 exit(failures == 0 ? 0 : 1)
