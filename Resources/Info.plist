@@ -24,28 +24,28 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0</string>
+	<string>1.0.1</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>2</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>15.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>mBACKUP copie les dossiers que vous avez choisis.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>NSNetworkVolumesUsageDescription</key>
+	<string>mBACKUP copie vos dossiers vers et depuis vos partages réseau.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSRemovableVolumesUsageDescription</key>
+	<string>mBACKUP copie vos dossiers vers et depuis vos disques externes.</string>
 	<key>NSSupportsAutomaticTermination</key>
 	<false/>
 	<key>NSSupportsSuddenTermination</key>
 	<false/>
-	<key>NSRemovableVolumesUsageDescription</key>
-	<string>mBACKUP copie vos dossiers vers et depuis vos disques externes.</string>
-	<key>NSNetworkVolumesUsageDescription</key>
-	<string>mBACKUP copie vos dossiers vers et depuis vos partages réseau.</string>
-	<key>NSDocumentsFolderUsageDescription</key>
-	<string>mBACKUP copie les dossiers que vous avez choisis.</string>
 </dict>
 </plist>
