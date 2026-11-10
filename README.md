@@ -1,5 +1,7 @@
 # mBACKUP
 
+[![Listed on OpenMacApps](https://openmacapps.com/badge.svg)](https://openmacapps.com/apps/mbackup/)
+
 Scheduled mirror copies of your folders, in the menu bar. A personal, simplified alternative to Get Backup Pro.
 
 ## About
