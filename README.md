@@ -14,6 +14,8 @@ mBACKUP is made by Starbudweiser & Claude Code (Anthropic). MIT License, © 2026
 
 mBACKUP is part of the **DESKTOP MAC TOOLKIT**, Starbudweiser's collection of macOS apps.
 
+![The main window with three scheduled backup tasks.](docs/screenshot.png)
+
 ## Features
 
 - Mirror synchronization (rsync 3.x) from a source folder to a destination, with the same options as Get Backup Pro.
