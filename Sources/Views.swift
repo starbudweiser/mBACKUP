@@ -340,9 +340,7 @@ struct TaskEditor: View {
             }
             VStack(alignment: .leading, spacing: 6) {
                 Text(L.t("f.type")).socle(Socle.T.label).foregroundStyle(Socle.C.textMuted)
-                Picker("", selection: Binding(get: { task.archive != nil }, set: { on in
-                    if on, task.archive == nil { for n in ArchiveTool.devFilters where !task.excludes.contains(n) { task.excludes.removeAll { $0.trimmingCharacters(in: .whitespaces).isEmpty }; task.excludes.append(n) } }
-                    task.archive = on ? (task.archive ?? ArchiveOptions()) : nil })) {
+                Picker("", selection: Binding(get: { task.archive != nil }, set: { task.archive = $0 ? (task.archive ?? ArchiveOptions()) : nil })) {
                     Text(L.t("type.mirror")).tag(false)
                     Text(L.t("type.archive")).tag(true)
                 }.pickerStyle(.segmented).labelsHidden()
@@ -459,6 +457,12 @@ struct TaskEditor: View {
                                      set: { task.excludes = $0.components(separatedBy: "\n") }))
                 .socle(Socle.T.mono).socleField(multiline: true).frame(minHeight: 130)
             Hint(L.t(task.archive != nil ? "f.excludes.zip.help" : "f.excludes.help"))
+            if task.archive != nil {
+                Button(L.t("btn.devFilters")) {
+                    task.excludes.removeAll { $0.trimmingCharacters(in: .whitespaces).isEmpty }
+                    for n in ArchiveTool.devFilters where !task.excludes.contains(n) { task.excludes.append(n) }
+                }.buttonStyle(SocleButtonStyle(.secondary)).frame(width: 300).frame(maxWidth: .infinity)
+            }
         }
     }
 

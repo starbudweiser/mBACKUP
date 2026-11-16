@@ -19,6 +19,7 @@ mBACKUP is part of the **DESKTOP MAC TOOLKIT**, Starbudweiser's collection of ma
 ## Features
 
 - Mirror synchronization (rsync 3.x) from a source folder to a destination, with the same options as Get Backup Pro.
+- Zip archives mode: one zip per subfolder (or a single zip) of a source folder, with exclusion filters (e.g. `.build`, `node_modules`); unchanged zips are not rebuilt.
 - Per-task schedule (days, time), catch-up of a missed run, automatic mounting of external disks and SMB shares.
 - Optional versioned copies (replaced or deleted files go to a dated folder next to the destination, N kept).
 - Dry run (simulation), exclusion patterns, optional administrator rights per task (password stored in the Keychain).
@@ -59,6 +60,7 @@ Released under the **MIT License**, © 2026 Starbudweiser. See [LICENSE](LICENSE
 Copies miroir planifiées de vos dossiers, depuis la barre de menus. Une alternative personnelle et simplifiée à Get Backup Pro.
 
 - Synchronisation miroir (rsync 3.x) d'un dossier source vers une destination, avec les mêmes options que Get Backup Pro.
+- Mode archives zip : un zip par sous-dossier (ou un zip unique) d'un dossier source, avec des filtres d'exclusion (ex. `.build`, `node_modules`) ; les zip inchangés ne sont pas refaits.
 - Planification par tâche (jours, heure), rattrapage d'une exécution manquée, montage automatique des disques externes et des partages SMB.
 - Copies versionnées facultatives (les fichiers remplacés ou supprimés vont dans un dossier daté à côté de la destination, N conservés).
 - Simulation, motifs d'exclusion, droits administrateur facultatifs par tâche (mot de passe rangé dans le Trousseau).
