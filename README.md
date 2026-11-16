@@ -12,6 +12,8 @@ Scheduled mirror copies of your folders, in the menu bar. A personal, simplified
 
 mBACKUP is made by Starbudweiser & Claude Code (Anthropic). MIT License, © 2026 Starbudweiser. Provided as is, without warranty: check your copies before relying on them. Inspired by Get Backup Pro, not affiliated with BeLight Software. See "About mBACKUP" in the app menu.
 
+mBACKUP is part of the **DESKTOP MAC TOOLKIT**, Starbudweiser's collection of macOS apps.
+
 ## Features
 
 - Mirror synchronization (rsync 3.x) from a source folder to a destination, with the same options as Get Backup Pro.
