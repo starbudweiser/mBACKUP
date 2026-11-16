@@ -338,6 +338,15 @@ struct TaskEditor: View {
                 Text(L.t("f.name")).socle(Socle.T.label).foregroundStyle(Socle.C.textMuted)
                 TextField("", text: $task.name).socle(Socle.T.body).socleField()
             }
+            VStack(alignment: .leading, spacing: 6) {
+                Text(L.t("f.type")).socle(Socle.T.label).foregroundStyle(Socle.C.textMuted)
+                Picker("", selection: Binding(get: { task.archive != nil }, set: { on in
+                    if on, task.archive == nil { for n in ArchiveTool.devFilters where !task.excludes.contains(n) { task.excludes.removeAll { $0.trimmingCharacters(in: .whitespaces).isEmpty }; task.excludes.append(n) } }
+                    task.archive = on ? (task.archive ?? ArchiveOptions()) : nil })) {
+                    Text(L.t("type.mirror")).tag(false)
+                    Text(L.t("type.archive")).tag(true)
+                }.pickerStyle(.segmented).labelsHidden()
+            }
             Check(title: L.t("f.enabled"), isOn: $task.enabled)
             Button(L.t("btn.delete")) { confirmDelete = true }.buttonStyle(ToneButtonStyle(fill: Socle.C.dangerBg, text: Socle.C.dangerSoft)).frame(width: 200).frame(maxWidth: .infinity)
         }
@@ -345,7 +354,7 @@ struct TaskEditor: View {
 
     private var paths: some View {
         Card(title: L.t("sec.paths"), subtitle: L.t("sec.paths.sub")) {
-            PathField(label: L.t("f.source"), path: $task.source) { task.source = $0; task.sourceMount = Self.mountInfo($0, keeping: task.sourceMount) }
+            PathField(label: L.t(task.archive != nil ? "f.src.archive" : "f.source"), path: $task.source) { task.source = $0; task.sourceMount = Self.mountInfo($0, keeping: task.sourceMount) }
             if task.sourceMount != nil {
                 Check(title: L.t("f.automount"), isOn: Binding(get: { task.sourceMount?.autoMount ?? false }, set: { task.sourceMount?.autoMount = $0 }))
             }
@@ -413,11 +422,24 @@ struct TaskEditor: View {
 
     private var options: some View {
         Card(title: L.t("sec.options")) {
-            Check(title: L.t("f.mirror"), isOn: $task.deleteExtra)
-            Check(title: L.t("f.hidden"), isOn: $task.excludeHidden)
-            Check(title: L.t("f.admin"), help: L.t("f.admin.help"), isOn: $task.useAdmin)
-            Check(title: L.t("f.versioning"), help: L.t("f.versioning.help"), isOn: $task.versioning)
-            if task.versioning {
+            if task.archive != nil {
+                Check(title: L.t("f.perSub"), help: L.t("f.perSub.help"), isOn: Binding(get: { task.archive?.perSubfolder ?? true }, set: { task.archive?.perSubfolder = $0 }))
+                if task.archive?.perSubfolder ?? true {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(L.t("f.only")).socle(Socle.T.label).foregroundStyle(Socle.C.textMuted)
+                        TextEditor(text: Binding(get: { (task.archive?.only ?? []).joined(separator: "\n") },
+                                                 set: { task.archive?.only = $0.components(separatedBy: "\n") }))
+                            .socle(Socle.T.mono).socleField(multiline: true).frame(minHeight: 70)
+                        Hint(L.t("f.only.help"))
+                    }
+                }
+            } else {
+                Check(title: L.t("f.mirror"), isOn: $task.deleteExtra)
+                Check(title: L.t("f.hidden"), isOn: $task.excludeHidden)
+                Check(title: L.t("f.admin"), help: L.t("f.admin.help"), isOn: $task.useAdmin)
+                Check(title: L.t("f.versioning"), help: L.t("f.versioning.help"), isOn: $task.versioning)
+            }
+            if task.archive == nil && task.versioning {
                 HStack(spacing: Socle.M.space3) {
                     Text(L.t("f.keep")).socle(Socle.T.label).foregroundStyle(Socle.C.textMuted)
                     Stepper(value: $task.versionsKept, in: 1...100) { Text("\(task.versionsKept)").socle(Socle.T.mono).socleValue() }
@@ -432,11 +454,11 @@ struct TaskEditor: View {
     }
 
     private var excludes: some View {
-        Card(title: L.t("sec.excludes"), subtitle: L.t("f.excludes")) {
+        Card(title: L.t("sec.excludes"), subtitle: L.t(task.archive != nil ? "f.excludes.zip" : "f.excludes")) {
             TextEditor(text: Binding(get: { task.excludes.joined(separator: "\n") },
                                      set: { task.excludes = $0.components(separatedBy: "\n") }))
                 .socle(Socle.T.mono).socleField(multiline: true).frame(minHeight: 130)
-            Hint(L.t("f.excludes.help"))
+            Hint(L.t(task.archive != nil ? "f.excludes.zip.help" : "f.excludes.help"))
         }
     }
 

@@ -82,6 +82,7 @@ struct BackupTask: Codable, Identifiable, Hashable {
     var excludes: [String] = []         // motifs rsync, un par ligne
     var versioning = false
     var versionsKept = 10
+    var archive: ArchiveOptions?        // renseigné : sauvegarde par archives zip (au lieu de la copie miroir)
     var lastAttempt: Date?              // dernière échéance traitée (réussie ou non)
     var last: RunRecord?
 }

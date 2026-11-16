@@ -208,10 +208,9 @@ enum Runner {
         return merged
     }
 
-    static func executeOne(_ task: BackupTask, dry: Bool, password: String?, logName: String, append: Bool,
-                           setProcess: @escaping @Sendable (Process?) -> Void,
-                           onProgress: @escaping @Sendable (Double) -> Void) async -> ExecResult {
-        // 1. Volumes à monter, puis garde-fou : jamais d'écriture sur le disque système à la place d'un volume absent.
+    /// Volumes à monter, puis garde-fou : jamais d'écriture sur le disque système à la place d'un volume absent.
+    /// Renvoie un résultat « ignorée » si la tâche ne peut pas partir, nil si tout est prêt.
+    static func preflight(_ task: BackupTask) async -> ExecResult? {
         for info in [task.sourceMount, task.destinationMount].compactMap({ $0 }) where !isMountPoint(info.mountPoint) {
             if info.autoMount { await mount(info) }
             if !isMountPoint(info.mountPoint) {
@@ -225,6 +224,16 @@ enum Runner {
         }
         guard FileManager.default.fileExists(atPath: task.source) else {
             return ExecResult(outcome: .skipped, detail: L.t("res.nosource", task.source), retryLater: true)
+        }
+        return nil
+    }
+
+    static func executeOne(_ task: BackupTask, dry: Bool, password: String?, logName: String, append: Bool,
+                           setProcess: @escaping @Sendable (Process?) -> Void,
+                           onProgress: @escaping @Sendable (Double) -> Void) async -> ExecResult {
+        if let early = await preflight(task) { return early }
+        if task.archive != nil {
+            return await executeArchive(task, dry: dry, logName: logName, append: append, setProcess: setProcess, onProgress: onProgress)
         }
         if task.useAdmin && (password ?? "").isEmpty {
             return ExecResult(outcome: .skipped, detail: L.t("res.nopass"), retryLater: true)

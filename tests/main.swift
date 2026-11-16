@@ -64,5 +64,45 @@ check(fr.keys.contains { $0.hasPrefix("about.") }, "clés about.*")
 
 check(VersionCompare.isNewer("v1.0.1", than: "1.0.0") && VersionCompare.isNewer("1.10.0", than: "1.9.9") && !VersionCompare.isNewer("1.0.0", than: "1.0") && !VersionCompare.isNewer("1.0.0", than: "v1.0.0") && VersionCompare.isNewer("2", than: "1.9.9"), "comparaison de versions")
 
+// --- Archives zip
+let pats = ArchiveTool.patterns([".build", " ", "node_modules/", "*.tmp"])
+check(pats == [".build", "node_modules", "*.tmp"], "motifs nettoyés : \(pats)")
+check(ArchiveTool.isExcluded(".build", pats) && ArchiveTool.isExcluded("a.tmp", pats) && !ArchiveTool.isExcluded("Sources", pats), "correspondance des noms")
+check(ArchiveTool.zipExcludeArgs(["dist"]) == ["-x", "*/dist/*", "*/dist"] && ArchiveTool.zipExcludeArgs([]).isEmpty, "arguments -x de zip")
+let arcRoot = NSTemporaryDirectory() + "mbackup-test-" + UUID().uuidString
+let fm = FileManager.default
+for d in ["AppA/Sources", "AppA/.build/x", "AppB/node_modules/y", ".caché", "AppC"] { try? fm.createDirectory(atPath: arcRoot + "/" + d, withIntermediateDirectories: true) }
+fm.createFile(atPath: arcRoot + "/AppA/Sources/a.swift", contents: Data("a".utf8))
+fm.createFile(atPath: arcRoot + "/AppA/.build/x/junk", contents: Data("j".utf8))
+fm.createFile(atPath: arcRoot + "/loose.txt", contents: Data("l".utf8))
+let us = ArchiveTool.units(source: arcRoot + "/", perSubfolder: true, patterns: ["AppC"])
+check(ArchiveTool.units(source: arcRoot, perSubfolder: true, patterns: [], only: ["AppB", "AppC"]).map(\.name) == ["AppB", "AppC"], "limité à une liste de sous-dossiers")
+check(us.map(\.name) == ["AppA", "AppB"], "un zip par sous-dossier visible, hors exclusions : \(us.map(\.name))")
+check(us[0].zipName == "AppA.zip" && us[0].parent == arcRoot, "nom du zip et dossier parent")
+let one = ArchiveTool.units(source: arcRoot, perSubfolder: false, patterns: [])
+check(one.count == 1 && one[0].parent == (arcRoot as NSString).deletingLastPathComponent, "zip unique de la source")
+let fp1 = ArchiveTool.fingerprint(of: arcRoot + "/AppA", patterns: ArchiveTool.devFilters)
+fm.createFile(atPath: arcRoot + "/AppA/.build/x/more", contents: Data("m".utf8))
+check(ArchiveTool.fingerprint(of: arcRoot + "/AppA", patterns: ArchiveTool.devFilters) == fp1, "un fichier exclu ne change pas l'empreinte")
+fm.createFile(atPath: arcRoot + "/AppA/Sources/b.swift", contents: Data("b".utf8))
+check(ArchiveTool.fingerprint(of: arcRoot + "/AppA", patterns: ArchiveTool.devFilters) != fp1, "un fichier ajouté change l'empreinte")
+// zip réel : les dossiers exclus n'y sont pas
+let zp = arcRoot + "/AppA.zip"
+let zproc = Process(); zproc.executableURL = URL(fileURLWithPath: "/usr/bin/zip"); zproc.currentDirectoryURL = URL(fileURLWithPath: arcRoot)
+zproc.arguments = ["-r", "-X", "-y", "-q", zp, "AppA"] + ArchiveTool.zipExcludeArgs(ArchiveTool.devFilters)
+try? zproc.run(); zproc.waitUntilExit()
+let lister = Process(); lister.executableURL = URL(fileURLWithPath: "/usr/bin/zipinfo"); lister.arguments = ["-1", zp]
+let lp = Pipe(); lister.standardOutput = lp; try? lister.run(); lister.waitUntilExit()
+let zl = String(decoding: lp.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+check(zl.contains("AppA/Sources/a.swift") && !zl.contains(".build"), "le zip contient les sources sans .build : \(zl)")
+try? fm.removeItem(atPath: arcRoot)
+var arcTask = BackupTask(name: "t", source: "/a", destination: "/b")
+check(arcTask.archive == nil, "par défaut : miroir")
+arcTask.archive = ArchiveOptions()
+let roundTrip = try? JSONDecoder().decode(BackupTask.self, from: JSONEncoder().encode(arcTask))
+check(roundTrip?.archive?.perSubfolder == true, "tâche archive : encodage")
+let oldJSON = try? JSONEncoder().encode(BackupTask(name: "t", source: "/a", destination: "/b"))
+check((try? JSONDecoder().decode(BackupTask.self, from: oldJSON ?? Data()))?.archive == nil, "ancien fichier sans type : miroir")
+
 print(failures == 0 ? "Tous les tests passent." : "\(failures) échec(s).")
 exit(failures == 0 ? 0 : 1)
