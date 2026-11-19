@@ -1,0 +1,3 @@
+NSDocumentsFolderUsageDescription = "mBACKUP copies the folders you have chosen.";
+NSNetworkVolumesUsageDescription = "mBACKUP copies your folders to and from your network shares.";
+NSRemovableVolumesUsageDescription = "mBACKUP copies your folders to and from your external drives.";

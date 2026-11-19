@@ -338,7 +338,7 @@ enum Runner {
             try? input.fileHandleForWriting.close()
             let deadline = Date().addingTimeInterval(20)
             while p.isRunning && Date() < deadline { try? await Task.sleep(nanoseconds: 100_000_000) }
-            if p.isRunning { p.terminate(); return (false, "délai dépassé") }
+            if p.isRunning { p.terminate(); return (false, L.t("admin.timeout")) }
             let text = String(decoding: err.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
                 .split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }.joined(separator: " / ")
             return (p.terminationStatus == 0, "code \(p.terminationStatus)" + (text.isEmpty ? "" : " : " + text))

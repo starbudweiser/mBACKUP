@@ -1,0 +1,3 @@
+NSDocumentsFolderUsageDescription = "mBACKUP copia le cartelle che hai scelto.";
+NSNetworkVolumesUsageDescription = "mBACKUP copia le tue cartelle da e verso le condivisioni di rete.";
+NSRemovableVolumesUsageDescription = "mBACKUP copia le tue cartelle da e verso i dischi esterni.";

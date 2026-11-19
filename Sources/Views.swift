@@ -208,7 +208,7 @@ struct ContentView: View {
         .sheet(isPresented: $store.showSettings) { SettingsSheet() }
         .sheet(item: $store.dryRun) { DryRunSheet(result: $0) }
         .alert(store.notice ?? "", isPresented: Binding(get: { store.notice != nil }, set: { if !$0 { store.notice = nil } })) {
-            Button("OK") { store.notice = nil }
+            Button(L.t("btn.ok")) { store.notice = nil }
         }
     }
 }

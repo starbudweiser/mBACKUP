@@ -2,10 +2,13 @@
 import Foundation
 
 enum L {
-    /// Langue du système si elle fait partie des quatre, sinon l'anglais.
+    /// Première langue préférée du système parmi les quatre prises en charge, sinon l'anglais.
     static let lang: String = {
-        let code = String((Locale.preferredLanguages.first ?? "en").prefix(2))
-        return tables[code] != nil ? code : "en"
+        for id in Locale.preferredLanguages {
+            let code = String(id.prefix(2)).lowercased()
+            if tables[code] != nil { return code }
+        }
+        return "en"
     }()
     static var locale: Locale { Locale(identifier: lang) }
 
@@ -28,6 +31,7 @@ enum L {
     private static let fr: [String: String] = [
         "app.tagline": "Copies miroir planifiées de vos dossiers, simples et fiables.",
         "menu.open": "Ouvrir mBACKUP", "menu.runAll": "Tout lancer", "menu.about": "À propos de mBACKUP", "menu.quit": "Quitter mBACKUP",
+        "btn.ok": "OK", "admin.timeout": "délai dépassé",
         "menu.settings": "Réglages…", "menu.none": "Aucune tâche", "menu.running": "en cours",
         "tasks.title": "Tâches", "tasks.add": "Nouvelle tâche", "empty.title": "Créez votre première tâche",
         "empty.body": "mBACKUP copie vos dossiers vers un disque ou un partage, aux heures choisies. Aucun fichier d'origine n'est modifié.",
@@ -96,6 +100,7 @@ enum L {
     private static let en: [String: String] = [
         "app.tagline": "Scheduled mirror copies of your folders, simple and reliable.",
         "menu.open": "Open mBACKUP", "menu.runAll": "Run all", "menu.about": "About mBACKUP", "menu.quit": "Quit mBACKUP",
+        "btn.ok": "OK", "admin.timeout": "timed out",
         "menu.settings": "Settings…", "menu.none": "No tasks", "menu.running": "running",
         "tasks.title": "Tasks", "tasks.add": "New task", "empty.title": "Create your first task",
         "empty.body": "mBACKUP copies your folders to a disk or a share at the times you choose. No original file is modified.",
@@ -164,6 +169,7 @@ enum L {
     private static let es: [String: String] = [
         "app.tagline": "Copias espejo programadas de tus carpetas, sencillas y fiables.",
         "menu.open": "Abrir mBACKUP", "menu.runAll": "Ejecutar todo", "menu.about": "Acerca de mBACKUP", "menu.quit": "Salir de mBACKUP",
+        "btn.ok": "OK", "admin.timeout": "tiempo agotado",
         "menu.settings": "Ajustes…", "menu.none": "Sin tareas", "menu.running": "en curso",
         "tasks.title": "Tareas", "tasks.add": "Nueva tarea", "empty.title": "Crea tu primera tarea",
         "empty.body": "mBACKUP copia tus carpetas a un disco o a un recurso compartido a las horas que elijas. No se modifica ningún archivo original.",
@@ -232,6 +238,7 @@ enum L {
     private static let it: [String: String] = [
         "app.tagline": "Copie speculari pianificate delle tue cartelle, semplici e affidabili.",
         "menu.open": "Apri mBACKUP", "menu.runAll": "Esegui tutto", "menu.about": "Informazioni su mBACKUP", "menu.quit": "Esci da mBACKUP",
+        "btn.ok": "OK", "admin.timeout": "tempo scaduto",
         "menu.settings": "Impostazioni…", "menu.none": "Nessuna attività", "menu.running": "in corso",
         "tasks.title": "Attività", "tasks.add": "Nuova attività", "empty.title": "Crea la tua prima attività",
         "empty.body": "mBACKUP copia le tue cartelle su un disco o una condivisione agli orari scelti. Nessun file originale viene modificato.",
