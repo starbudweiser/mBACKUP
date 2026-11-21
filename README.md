@@ -69,3 +69,9 @@ Copies miroir planifiées de vos dossiers, depuis la barre de menus. Une alterna
 **Installation** : téléchargez la [dernière version notarisée](https://github.com/starbudweiser/mBACKUP/releases/latest), décompressez-la et placez **mBACKUP.app** dans Applications (macOS 15 Sequoia ou plus récent, Apple Silicon). Si des dossiers protégés échouent (iCloud Drive, Bibliothèque), accordez à mBACKUP l'accès complet au disque dans Réglages Système.
 
 Interface en français, anglais, espagnol et italien, choisie d'après la langue du Mac. Licence MIT. Inspirée de Get Backup Pro, sans lien avec BeLight Software. Vérifiez vos copies avant de vous y fier.
+
+## Support / Soutenir
+
+This app is free. If it is useful to you, you can support the project (optional, no reward expected): [GitHub Sponsors](https://github.com/sponsors/starbudweiser).
+
+Cette appli est gratuite. Si elle vous est utile, vous pouvez soutenir le projet (facultatif, sans contrepartie) : [GitHub Sponsors](https://github.com/sponsors/starbudweiser).
