@@ -41,6 +41,9 @@ struct MbackupApp: App {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Une seule instance : deux copies lanceraient les mêmes sauvegardes en même temps et s'écraseraient mutuellement.
+        let me = ProcessInfo.processInfo.processIdentifier
+        if NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "").contains(where: { $0.processIdentifier != me }) { exit(0) }
         Socle.brand("mBACKUP", color: Brand.color)
         Socle.apply()
         Store.shared.start()

@@ -64,7 +64,7 @@ extension Runner {
             if code != 0 && code != 18 { failed.append(unit.name); log += "! \(unit.zipName) : zip code \(code) \(msg)\n"; continue }
             if code == 18 { warned = true; log += "~ \(unit.zipName) : fichiers illisibles ignorés \(msg)\n" }
 
-            let part = finalZip + ".part"
+            let part = finalZip + "." + UUID().uuidString.prefix(8) + ".part"      // nom propre à cette exécution
             do {
                 try? fm.removeItem(atPath: part)
                 try fm.copyItem(atPath: tmpZip, toPath: part)
