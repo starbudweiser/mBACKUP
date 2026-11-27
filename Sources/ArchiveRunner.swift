@@ -17,6 +17,12 @@ extension Runner {
         let units = ArchiveTool.units(source: task.source, perSubfolder: opts.perSubfolder, patterns: patterns,
                                        only: (opts.only ?? []).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty })
         guard !units.isEmpty else { return ExecResult(outcome: .skipped, detail: L.t("arc.nounit"), logFile: logName) }
+        // Dossiers temporaires laissés par un arrêt brutal : on retire ceux de plus de 2 h.
+        let tmpRoot = NSTemporaryDirectory()
+        for n in (try? fm.contentsOfDirectory(atPath: tmpRoot)) ?? [] where n.hasPrefix("mbackup-zip-") {
+            let p = tmpRoot + n
+            if let m = (try? fm.attributesOfItem(atPath: p))?[.modificationDate] as? Date, Date().timeIntervalSince(m) > 7200 { try? fm.removeItem(atPath: p) }
+        }
         if !dry { try? fm.createDirectory(atPath: task.destination, withIntermediateDirectories: true) }
 
         var log = "=== " + task.source + " → " + task.destination + " (zip) ===\n"

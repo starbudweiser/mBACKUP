@@ -16,6 +16,16 @@ enum Paths {
     static var tasksFile: URL { support.appendingPathComponent("tasks.json") }
 }
 
+/// Témoin « sauvegarde en cours » : fichier contenant le PID de l'appli tant qu'une tâche tourne.
+/// Les scripts de compilation et d'installation le lisent pour ne jamais remplacer l'appli en plein travail.
+enum Busy {
+    static var file: URL { Paths.support.appendingPathComponent("busy.pid") }
+    static func update(_ busy: Bool) {
+        if busy { try? String(ProcessInfo.processInfo.processIdentifier).write(to: file, atomically: true, encoding: .utf8) }
+        else { try? FileManager.default.removeItem(at: file) }
+    }
+}
+
 /// Mot de passe administrateur, rangé dans le Trousseau (jamais en clair sur le disque).
 enum Keychain {
     private static let service = "fr.stephan.mbackup.admin"

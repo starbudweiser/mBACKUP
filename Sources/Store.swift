@@ -11,7 +11,7 @@ final class Store: ObservableObject {
     @Published var tasks: [BackupTask] = [] { didSet { save() } }
     @Published var selection: UUID?
     @Published var progress: [UUID: Double] = [:]
-    @Published var queue: [UUID] = []                 // en attente ou en cours (le premier est en cours)
+    @Published var queue: [UUID] = [] { didSet { Busy.update(!queue.isEmpty) } }     // en attente ou en cours (le premier est en cours)
     @Published var dryRun: DryRunResult?
     @Published var notice: String?
     @Published var showSettings = false
@@ -77,6 +77,13 @@ final class Store: ObservableObject {
             scheduledRun.insert(t.id)
             enqueue(t.id, dry: false)
         }
+    }
+
+    /// Fermeture de l'appli (⌘Q, arrêt système, mise à jour) : on arrête proprement le traitement en cours.
+    /// La tâche n'est pas comptée comme traitée : au prochain lancement, le rattrapage la reprend.
+    func prepareToQuit() {
+        current?.terminate()
+        Busy.update(false)
     }
 
     func nextRun(_ t: BackupTask) -> Date? { t.enabled ? t.schedule.nextOccurrence(after: Date()) : nil }

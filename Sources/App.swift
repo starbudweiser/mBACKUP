@@ -40,10 +40,19 @@ struct MbackupApp: App {
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var sigterm: DispatchSourceSignal?
+
+    func applicationWillTerminate(_ notification: Notification) { Store.shared.prepareToQuit() }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Une seule instance : deux copies lanceraient les mêmes sauvegardes en même temps et s'écraseraient mutuellement.
         let me = ProcessInfo.processInfo.processIdentifier
         if NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "").contains(where: { $0.processIdentifier != me }) { exit(0) }
+        // Un arrêt par signal (pkill, script d'installation) passe aussi par l'arrêt propre.
+        signal(SIGTERM, SIG_IGN)
+        let src = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        src.setEventHandler { MainActor.assumeIsolated { Store.shared.prepareToQuit() }; exit(0) }
+        src.resume(); sigterm = src
         Socle.brand("mBACKUP", color: Brand.color)
         Socle.apply()
         Store.shared.start()
