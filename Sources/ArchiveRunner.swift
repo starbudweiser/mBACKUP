@@ -61,8 +61,9 @@ extension Runner {
             let err = Pipe()
             p.standardOutput = FileHandle.nullDevice; p.standardError = err
             setProcess(p)
+            let exited = ProcessExit(p)
             do { try p.run() } catch { setProcess(nil); failed.append(unit.name); log += "! \(unit.zipName) : \(error.localizedDescription)\n"; continue }
-            let errData = await Task.detached { let d = err.fileHandleForReading.readDataToEndOfFile(); p.waitUntilExit(); return d }.value
+            let errData = await Task.detached { let d = err.fileHandleForReading.readDataToEndOfFile(); exited.waitSync(); return d }.value
             setProcess(nil)
             if p.terminationReason == .uncaughtSignal { log += "— arrêt demandé\n"; flush(); return ExecResult(outcome: .skipped, detail: L.t("res.stopped"), logFile: logName) }
             let code = p.terminationStatus

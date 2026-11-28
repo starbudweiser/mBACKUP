@@ -38,3 +38,14 @@ enum Locks {
         FileLock.tryAcquire(dir.appendingPathComponent("dest-" + key(destination) + ".lock"))
     }
 }
+
+/// Attente fiable de la fin d'un processus. `waitUntilExit()` peut rester bloqué indéfiniment hors du fil principal
+/// quand le processus se termine juste avant l'attente (constaté le 28/11/2026 : zip fini, mBACKUP figé 1 h).
+/// Le gestionnaire de fin, posé avant `run()`, est appelé par le système sans boucle d'exécution.
+final class ProcessExit: @unchecked Sendable {
+    private let sem = DispatchSemaphore(value: 0)
+    /// À créer AVANT `p.run()`.
+    init(_ p: Process) { p.terminationHandler = { [sem] _ in sem.signal() } }
+    func waitSync() { sem.wait(); sem.signal() }            // ré-armé : plusieurs attentes possibles
+    func wait() async { await Task.detached { [self] in waitSync() }.value }
+}

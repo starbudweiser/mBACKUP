@@ -140,5 +140,13 @@ check((try? String(contentsOfFile: fin, encoding: .utf8)) == "nouveau", ".part d
 check(((try? fm.contentsOfDirectory(atPath: repDir)) ?? []).filter { $0.hasSuffix(".old") }.isEmpty, "aucun .old laissé")
 try? fm.removeItem(atPath: repDir)
 
+// --- Attente de fin de processus (y compris un processus déjà terminé avant l'attente)
+for _ in 0..<200 {
+    let q = Process(); q.executableURL = URL(fileURLWithPath: "/usr/bin/true")
+    let ex = ProcessExit(q); try? q.run()
+    usleep(UInt32.random(in: 0...3000)); ex.waitSync(); ex.waitSync()
+    if q.isRunning { check(false, "processus encore en cours après l'attente"); break }
+}
+
 print(failures == 0 ? "Tous les tests passent." : "\(failures) échec(s).")
 exit(failures == 0 ? 0 : 1)

@@ -135,9 +135,10 @@ final class Updater: ObservableObject {
                 let p = Process(), pipe = Pipe()
                 p.executableURL = URL(fileURLWithPath: exe); p.arguments = args
                 p.standardOutput = pipe; p.standardError = pipe
+                let exited = ProcessExit(p)
                 do { try p.run() } catch { cont.resume(throwing: error); return }
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                p.waitUntilExit()
+                exited.waitSync()
                 let text = String(decoding: data, as: UTF8.self)
                 if p.terminationStatus == 0 { cont.resume(returning: text) }
                 else { cont.resume(throwing: exe.hasSuffix("codesign") ? UpdateError.badSignature : UpdateError.download) }

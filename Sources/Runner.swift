@@ -281,6 +281,7 @@ enum Runner {
         let out = Pipe(), input = Pipe()
         process.standardOutput = out; process.standardError = out; process.standardInput = input
         setProcess(process)
+        let exited = ProcessExit(process)
         do { try process.run() } catch {
             collector.finish(); setProcess(nil)
             return ExecResult(outcome: .failed, detail: error.localizedDescription, logFile: logName)
@@ -292,7 +293,7 @@ enum Runner {
         await Task.detached {
             while true { let d = handle.availableData; if d.isEmpty { break }; collector.feed(d) }
         }.value
-        process.waitUntilExit()
+        await exited.wait()
         collector.finish(); setProcess(nil)
 
         let code = process.terminationStatus
