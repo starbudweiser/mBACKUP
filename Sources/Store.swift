@@ -50,7 +50,7 @@ final class Store: ObservableObject {
     func start() {
         guard timer == nil else { return }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) { _, _ in }
-        if UserDefaults.standard.object(forKey: "launchAtLoginSet") == nil {
+        if !Paths.isDev, UserDefaults.standard.object(forKey: "launchAtLoginSet") == nil {
             UserDefaults.standard.set(true, forKey: "launchAtLoginSet")
             setLaunchAtLogin(true)
         }

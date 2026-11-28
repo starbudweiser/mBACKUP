@@ -104,5 +104,41 @@ check(roundTrip?.archive?.perSubfolder == true, "tâche archive : encodage")
 let oldJSON = try? JSONEncoder().encode(BackupTask(name: "t", source: "/a", destination: "/b"))
 check((try? JSONDecoder().decode(BackupTask.self, from: oldJSON ?? Data()))?.archive == nil, "ancien fichier sans type : miroir")
 
+// --- Verrous et remplacement sûr d'une archive
+let lockDir = URL(fileURLWithPath: NSTemporaryDirectory() + "mbackup-test-locks-" + UUID().uuidString)
+check(Locks.key("/Volumes/X/dest/") == Locks.key("/Volumes/X/dest"), "clé de verrou : « / » final ignoré")
+check(Locks.key("/Volumes/X/a") != Locks.key("/Volumes/X/b"), "clé de verrou : destinations distinctes")
+var l1 = Locks.destination("/Volumes/X/dest", in: lockDir)
+check(l1 != nil, "premier verrou pris")
+check(Locks.destination("/Volumes/X/dest/", in: lockDir) == nil, "même destination : second verrou refusé")
+check(Locks.destination("/Volumes/X/autre", in: lockDir) != nil, "autre destination : verrou libre")
+l1 = nil
+check(Locks.destination("/Volumes/X/dest", in: lockDir) != nil, "verrou libéré puis repris")
+// Verrou tenu par un autre processus : refusé ici aussi.
+let holder = Process(); holder.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+let lockFile = lockDir.appendingPathComponent("dest-" + Locks.key("/Volumes/X/proc") + ".lock").path
+holder.arguments = ["-c", "import fcntl,sys,time;f=open(sys.argv[1],'w');fcntl.flock(f,fcntl.LOCK_EX);print('ok',flush=True);time.sleep(30)", lockFile]
+let hp = Pipe(); holder.standardOutput = hp; try? holder.run()
+_ = hp.fileHandleForReading.availableData            // attend « ok » : le verrou est tenu
+check(Locks.destination("/Volumes/X/proc", in: lockDir) == nil, "verrou tenu par un autre processus : refusé")
+holder.terminate(); holder.waitUntilExit()
+check(Locks.destination("/Volumes/X/proc", in: lockDir) != nil, "processus arrêté : verrou libéré")
+try? fm.removeItem(at: lockDir)
+
+let repDir = NSTemporaryDirectory() + "mbackup-test-rep-" + UUID().uuidString
+try? fm.createDirectory(atPath: repDir, withIntermediateDirectories: true)
+let fin = repDir + "/A.zip", prt = repDir + "/A.zip.1234.part"
+try? "ancien".write(toFile: fin, atomically: true, encoding: .utf8)
+try? "nouveau".write(toFile: prt, atomically: true, encoding: .utf8)
+check((try? ArchiveTool.replace(part: prt, final: fin, expectedSize: 7)) != nil, "remplacement réussi")
+check((try? String(contentsOfFile: fin, encoding: .utf8)) == "nouveau" && !fm.fileExists(atPath: prt), "nouveau zip en place, .part disparu")
+try? "court".write(toFile: prt, atomically: true, encoding: .utf8)
+check((try? ArchiveTool.replace(part: prt, final: fin, expectedSize: 999)) == nil, "copie incomplète : refusée")
+check((try? String(contentsOfFile: fin, encoding: .utf8)) == "nouveau", "copie incomplète : l'ancien zip reste")
+check((try? ArchiveTool.replace(part: repDir + "/absent.part", final: fin)) == nil, ".part disparu : erreur")
+check((try? String(contentsOfFile: fin, encoding: .utf8)) == "nouveau", ".part disparu : l'ancien zip reste")
+check(((try? fm.contentsOfDirectory(atPath: repDir)) ?? []).filter { $0.hasSuffix(".old") }.isEmpty, "aucun .old laissé")
+try? fm.removeItem(atPath: repDir)
+
 print(failures == 0 ? "Tous les tests passent." : "\(failures) échec(s).")
 exit(failures == 0 ? 0 : 1)

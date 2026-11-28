@@ -15,6 +15,17 @@ struct ArchiveUnit: Hashable {
     var zipName: String { name + ".zip" }
 }
 
+enum ArchiveError: LocalizedError {
+    case sizeMismatch(UInt64, UInt64)
+    case posix(String, Int32)
+    var errorDescription: String? {
+        switch self {
+        case let .sizeMismatch(got, want): return "copie incomplète (\(got) octets sur \(want))"
+        case let .posix(op, e): return "\(op) : " + String(cString: strerror(e))
+        }
+    }
+}
+
 enum ArchiveTool {
     /// Filtres proposés d'office pour les dossiers de développement (régénérables).
     static let devFilters = [".build", "node_modules", "dist", "build", "__pycache__"]
@@ -51,6 +62,28 @@ enum ArchiveTool {
                   fm.fileExists(atPath: (src as NSString).appendingPathComponent(n), isDirectory: &isDir), isDir.boolValue else { return nil }
             return ArchiveUnit(name: n, parent: src)
         }
+    }
+
+    /// Met `part` (déjà copié à côté de la destination) à la place de `final`, sans jamais laisser la destination
+    /// sans archive : renommage atomique qui écrase l'ancien zip ; à défaut, l'ancien est mis de côté, le nouveau
+    /// prend sa place, et l'ancien n'est supprimé qu'une fois le nouveau en place (remis en place en cas d'échec).
+    static func replace(part: String, final: String, expectedSize: UInt64? = nil) throws {
+        let fm = FileManager.default
+        if let want = expectedSize {
+            let got = ((try? fm.attributesOfItem(atPath: part))?[.size] as? NSNumber)?.uint64Value
+            guard got == want else { throw ArchiveError.sizeMismatch(got ?? 0, want) }
+        }
+        if rename(part, final) == 0 { return }
+        let renameErr = errno
+        guard fm.fileExists(atPath: final) else { throw ArchiveError.posix("rename", renameErr) }
+        let old = final + "." + UUID().uuidString.prefix(8) + ".old"
+        guard rename(final, old) == 0 else { throw ArchiveError.posix("rename", errno) }
+        guard rename(part, final) == 0 else {
+            let e = errno
+            _ = rename(old, final)          // l'ancien zip reprend sa place
+            throw ArchiveError.posix("rename", e)
+        }
+        try? fm.removeItem(atPath: old)
     }
 
     /// Empreinte du contenu archivé (nombre d'éléments + date de modification la plus récente + exclusions) :

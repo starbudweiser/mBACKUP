@@ -41,6 +41,7 @@ struct MbackupApp: App {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var sigterm: DispatchSourceSignal?
+    private var instanceLock: FileLock?
 
     func applicationWillTerminate(_ notification: Notification) { Store.shared.prepareToQuit() }
 
@@ -48,6 +49,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Une seule instance : deux copies lanceraient les mêmes sauvegardes en même temps et s'écraseraient mutuellement.
         let me = ProcessInfo.processInfo.processIdentifier
         if NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "").contains(where: { $0.processIdentifier != me }) { exit(0) }
+        // Verrou d'instance, sûr même pour deux lancements simultanés (le test ci-dessus ne voit pas toujours l'autre).
+        guard let lock = FileLock.tryAcquire(Paths.support.appendingPathComponent("instance.lock")) else { exit(0) }
+        instanceLock = lock
         // Un arrêt par signal (pkill, script d'installation) passe aussi par l'arrêt propre.
         signal(SIGTERM, SIG_IGN)
         let src = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)

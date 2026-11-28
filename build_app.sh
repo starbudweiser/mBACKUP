@@ -1,9 +1,12 @@
 #!/bin/zsh
 # Construit « mBACKUP.app » dans le dossier du projet, la signe (certificat local stable) puis l'installe dans
 # ~/Applications/Applications Personnelles. NO_INSTALL=1 : ne pas installer ; NO_OPEN=1 : ne pas lancer.
+# DEV=1 : édition de développement « mBACKUP Dev.app » (identifiant fr.stephan.mbackup.dev, données dans
+# « Application Support/mBACKUP Dev »), laissée dans le dossier du projet, jamais installée.
 set -euo pipefail
 cd "$(dirname "$0")"
 APP="mBACKUP.app"
+if [ -n "${DEV:-}" ]; then APP="mBACKUP Dev.app"; NO_INSTALL=1; fi
 DEST="$HOME/Applications/Applications Personnelles"
 rm -rf "$APP" build
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
@@ -12,6 +15,9 @@ swiftc -O -swift-version 5 -parse-as-library -target arm64-apple-macos15 -o "$AP
 
 cp assets/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+if [ -n "${DEV:-}" ]; then
+  /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier fr.stephan.mbackup.dev" -c "Set :CFBundleName mBACKUP Dev" "$APP/Contents/Info.plist"
+fi
 # Descriptions des autorisations dans les 4 langues
 for l in fr en es it; do mkdir -p "$APP/Contents/Resources/$l.lproj"; cp "Resources/$l.lproj/InfoPlist.strings" "$APP/Contents/Resources/$l.lproj/InfoPlist.strings"; done
 

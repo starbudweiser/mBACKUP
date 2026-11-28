@@ -28,6 +28,7 @@ final class Updater: ObservableObject {
 
     /// Appelé par le planificateur : une recherche par jour, et installation automatique dès qu'aucune sauvegarde ne tourne.
     func tick(busy: Bool) {
+        guard !Paths.isDev else { return }          // l'édition de développement ne se met jamais à jour seule
         let last = UserDefaults.standard.object(forKey: "updateLastCheck") as? Date ?? .distantPast
         if state == .idle || state == .upToDate, Date().timeIntervalSince(last) > interval, autoUpdate {
             Task { await check() }

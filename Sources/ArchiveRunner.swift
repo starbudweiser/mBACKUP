@@ -72,12 +72,12 @@ extension Runner {
 
             let part = finalZip + "." + UUID().uuidString.prefix(8) + ".part"      // nom propre à cette exécution
             do {
-                try? fm.removeItem(atPath: part)
+                // L'ancien zip n'est jamais supprimé avant que le nouveau soit entièrement copié et mis à sa place.
                 try fm.copyItem(atPath: tmpZip, toPath: part)
-                try? fm.removeItem(atPath: finalZip)
-                try fm.moveItem(atPath: part, toPath: finalZip)
+                let size = ((try? fm.attributesOfItem(atPath: tmpZip))?[.size] as? NSNumber)?.uint64Value
+                try ArchiveTool.replace(part: part, final: finalZip, expectedSize: size)
             } catch {
-                try? fm.removeItem(atPath: part)
+                try? fm.removeItem(atPath: part)      // uniquement le .part de cette exécution
                 failed.append(unit.name); log += "! \(unit.zipName) : \(error.localizedDescription)\n"; continue
             }
             state[key] = fp; saveState(state)

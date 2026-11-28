@@ -3,8 +3,10 @@ import Foundation
 import Security
 
 enum Paths {
+    /// Édition de développement (identifiant « ….dev ») : ses propres tâches, journaux et réglages, jamais ceux de la version installée.
+    static let isDev = (Bundle.main.bundleIdentifier ?? "").hasSuffix(".dev")
     static let support: URL = {
-        let u = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/mBACKUP")
+        let u = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/" + (isDev ? "mBACKUP Dev" : "mBACKUP"))
         try? FileManager.default.createDirectory(at: u, withIntermediateDirectories: true)
         return u
     }()
@@ -242,6 +244,12 @@ enum Runner {
                            setProcess: @escaping @Sendable (Process?) -> Void,
                            onProgress: @escaping @Sendable (Double) -> Void) async -> ExecResult {
         if let early = await preflight(task) { return early }
+        // Une seule exécution à la fois par destination, même entre plusieurs instances de l'appli :
+        // la seconde attend son tour (nouvel essai dans 10 min) au lieu d'écraser le travail de la première.
+        guard let lock = Locks.destination(task.destination) else {
+            return ExecResult(outcome: .skipped, detail: L.t("res.busy"), logFile: nil, retryLater: true)
+        }
+        defer { withExtendedLifetime(lock) {} }
         if task.archive != nil {
             return await executeArchive(task, dry: dry, logName: logName, append: append, setProcess: setProcess, onProgress: onProgress)
         }
